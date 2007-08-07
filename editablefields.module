@@ -31,6 +31,14 @@ function editablefields_views_style_plugins() {
 }
 
 
+function editablefields_field_formatter_info()
+{
+  return array(
+    'editable' => array(
+      'label' => 'Editable',
+      'field types' => array_keys(_content_field_types()),
+      ));
+}
 
 
 
@@ -142,6 +150,66 @@ function _editablefields_make_form_ids_unique($form, $nid) {
 }
 
 
+function _editablefields_content_form_field(&$node, $fieldname)
+{
+  $form = array();
+  $type_name = is_string($node) ? $node : (is_array($node) ? $node['type'] : $node->type);
+  $types = content_types($type_name);
+
+  $field=$types['fields'][$fieldname];
+  $widget_types = _content_widget_types();
+
+    // Set form parameters so we can accept file uploads.
+  if (count($type['fields'])) {
+    $form['#attributes'] = array("enctype" => "multipart/form-data");
+  }
+  
+  _editablefields_content_widget_invoke_field('prepare form values', $node,$field,$widget_types);
+  $form = array_merge($form,_editablefields_content_widget_invoke_field('form',$node,$field,$widget_types));
+  
+  return $form;
+  
+}
+ 
+/**
+ * Invoke a widget hook for one field.
+ */
+function _editablefields_content_widget_invoke_field($op, &$node,  $field, $widget_types) 
+{
+  $return = array();
+  
+  $node_field = isset($node->$field['field_name']) ? $node->$field['field_name'] : array();
+    
+  $module = $widget_types[$field['widget']['type']]['module'];
+  $function = $module .'_widget';
+  
+  if (function_exists($function)) {
+    
+    // If we're building a node creation form, pre-fill with default values
+    if ($op == 'prepare form values' && empty($node->nid)) {
+      $node_field = array_merge($node_field, content_default_value($node, $field, $node_field));
+    }
+    
+    $result = $function($op, $node, $field, $node_field);
+    if (is_array($result) && $op == 'form') {
+      $result[$field['field_name']]['#weight'] = $field['widget']['weight'];
+    }
+    if (is_array($result)) {
+      $return = array_merge($return, $result);
+    }
+    else if (isset($result)) {
+      $return[] = $result;
+    }
+  }
+  // test for values in $node_field in case modules added items
+  if (is_object($node) && (isset($node->$field['field_name']) || count($node_field))) {
+    $node->$field['field_name'] = $node_field;
+  }
+
+  return $return;
+  
+}
+
 /**
  * Themeable function to handle displaying a specific field.
  */
@@ -149,31 +217,27 @@ function theme_views_editablefields_handle_field($fields, $field, $data) {
   $info = $fields[$field['fullname']];
 
   if ($field['options'] == 'editable') {
-    if (function_exists("content_form_field")) {
       
-      $node=node_load($data->nid);
-      if (node_access("update",$node)) {
-        if ($info['content_field']['field_name']) {
-          $form=array();
-          
-          global $viewfield_stack;
-          $tmp=$viewfield_stack;
-          $viewfield_stack=array();
-          $form=content_form_field($node, $info['content_field']['field_name']);
-          $viewfield_stack=$tmp;
-          
-          foreach (element_children($form) as $key) {
-            $form["editablefield_".$data->nid."_".$key]=$form[$key];
-            unset($form[$key]);
-          }
-          
-          $form=_editablefields_make_form_ids_unique($form,$data->nid);
-          $form=form_builder('editableviewfield',$form);
-          
-          return $form=drupal_render_form('editableviewfield',$form);
-        } else {
-          drupal_set_message("Can't edit non CCK types for field \"".$field["field"]."\"");
+    $node=node_load($data->nid);
+    if (node_access("update",$node)) {
+      if ($info['content_field']['field_name']) {
+        $form=array();
+        
+        global $viewfield_stack;
+        $tmp=$viewfield_stack;
+        $viewfield_stack=array();
+        $form=_editablefields_content_form_field($node, $info['content_field']['field_name']);
+        $viewfield_stack=$tmp;
+        
+        foreach (element_children($form) as $key) {
+          $form["editablefield_".$data->nid."_".$key]=$form[$key];
+          unset($form[$key]);
         }
+        
+        $form=_editablefields_make_form_ids_unique($form,$data->nid);
+        $form=form_builder('editableviewfield',$form);
+        
+        return $form=drupal_render_form('editableviewfield',$form);
       } // no access, so silently just print field out.
     } else {
       drupal_set_message("enable CCK if you wish to edit fields");
