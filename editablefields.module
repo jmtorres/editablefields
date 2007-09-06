@@ -83,7 +83,7 @@ function _handle_editablefield_form_input($view, $nodes) {
       $editable=true;
     }
   }
-  if ($editable) {
+  /*  if ($editable) { // we dont need to be THIS zealous
     $editable=FALSE;
     foreach ($nodes as $node) {
       if (node_access("update",$node)) {
@@ -91,6 +91,7 @@ function _handle_editablefield_form_input($view, $nodes) {
       }
     }
   }
+  */
   if ($editable) {
     foreach ($nodes as $node) {
       if ($node=_editablefields_node_load_and_update($node->nid)) {
@@ -274,19 +275,22 @@ function theme_views_editablefields_view_list($view, $nodes, $type) {
     }
     $items[] = "<div class='view-item ". views_css_safe('view-item-'. $view->name) ."'>$item</div>\n"; // l($node->title, "node/$node->nid");
   }
-  if ($items) {
     $html=theme('item_list', $items);
     
     if ($editable) {
-      $form['editablefields']['submit']= array('#type' => 'submit', '#value' => t('Submit'));
-      $form['editablefields']['#value']=$html;
-      drupal_process_form('editablefields',$form);
       $newentry_form=_editablefields_entry_form($view);
-      return drupal_render($form).$newentry_form;
+      if ($nodes) {
+	$form['editablefields']['submit']= array('#type' => 'submit', '#value' => t('Submit'));
+	$form['editablefields']['#value']=$html;
+	drupal_process_form('editablefields',$form);
+	$eform=drupal_render($form);
+	return $eform.$newentry_form;
+      } else {
+	return $newentry_form;
+      }
     } else {
       return $html;
     }
-  }
 }
 
 /**
@@ -309,15 +313,20 @@ function theme_views_editablefields_view_table($view, $nodes, $type) {
     $rows[] = $row;
   }
   $html=theme('table', $view->table_header, $rows );
-  if ($editable) {
-    $form['editablefields']['submit']= array('#type' => 'submit', '#value' => t('Submit'));
-    $form['editablefields']['#value']=$html;
-    drupal_process_form('editablefields',$form);
-    $newentry_form=_editablefields_entry_form($view);
-    return drupal_render($form).$newentry_form;
-  } else {
-    return $html;
-  }
+    if ($editable) {
+      $newentry_form=_editablefields_entry_form($view);
+      if ($nodes) {
+	$form['editablefields']['submit']= array('#type' => 'submit', '#value' => t('Submit'));
+	$form['editablefields']['#value']=$html;
+	drupal_process_form('editablefields',$form);
+	$eform=drupal_render($form);
+	return $eform.$newentry_form;
+      } else {
+	return $newentry_form;
+      }
+    } else {
+      return $html;
+    }
 }
 
 function _editablefields_node_type($view) {
