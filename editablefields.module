@@ -258,6 +258,19 @@ function theme_views_editablefields_handle_field($fields, $field, $data) {
         
         return $form=drupal_render_form('editableviewfield',$form);
       } // no access, so silently just print field out.
+      else if (!empty($info['form_parents'])){
+        $form = array();
+        $node_form = node_invoke($node, 'form');
+        foreach (explode('][', $info['form_parents']) as $key){
+            $node_form = $node_form[$key];
+        }
+        if (is_array($node_form)){
+          $form['editablefield_'. $data->nid .'_'. $field['field']] = $node_form;
+        }
+        $form = _editablefields_make_form_ids_unique($form, $data->nid);
+        $form = form_builder('editableviewfield', $form);
+        return $form = drupal_render_form('editableviewfield', $form);
+      }
     } else {
       drupal_set_message("enable CCK if you wish to edit fields");
     }
@@ -298,13 +311,13 @@ function theme_views_editablefields_view_list($view, $nodes, $type) {
     if ($editable) {
       $newentry_form=_editablefields_entry_form($view);
       if ($nodes) {
-	$form['editablefields']['submit']= array('#type' => 'submit', '#value' => t('Submit'));
-	$form['editablefields']['#value']=$html;
-	drupal_process_form('editablefields',$form);
-	$eform=drupal_render($form);
-	return $eform.$newentry_form;
+  $form['editablefields']['submit']= array('#type' => 'submit', '#value' => t('Submit'));
+  $form['editablefields']['#value']=$html;
+  drupal_process_form('editablefields',$form);
+  $eform=drupal_render($form);
+  return $eform.$newentry_form;
       } else {
-	return $newentry_form;
+  return $newentry_form;
       }
     } else {
       return $html;
@@ -335,13 +348,13 @@ function theme_views_editablefields_view_table($view, $nodes, $type) {
       $newentry_form="<table>"._editablefields_entry_form($view)."</table>";
       //$newentry_form=_editablefields_entry_form($view);
       if ($nodes) {
-	$form['editablefields']['submit']= array('#type' => 'submit', '#value' => t('Submit'));
-	$form['editablefields']['#value']=$html;
-	drupal_process_form('editablefields',$form);
-	$eform=drupal_render($form);
-	return $eform.$newentry_form;
+  $form['editablefields']['submit']= array('#type' => 'submit', '#value' => t('Submit'));
+  $form['editablefields']['#value']=$html;
+  drupal_process_form('editablefields',$form);
+  $eform=drupal_render($form);
+  return $eform.$newentry_form;
       } else {
-	return $newentry_form;
+  return $newentry_form;
       }
     } else {
       return $html;
@@ -371,11 +384,11 @@ function theme_views_editablefields_view_list_noform($view, $nodes, $type) {
     
     if ($editable) {
       if ($nodes) {
-	$form['editablefields']['submit']= array('#type' => 'submit', '#value' => t('Submit'));
-	$form['editablefields']['#value']=$html;
-	drupal_process_form('editablefields',$form);
-	$eform=drupal_render($form);
-	return $eform;
+  $form['editablefields']['submit']= array('#type' => 'submit', '#value' => t('Submit'));
+  $form['editablefields']['#value']=$html;
+  drupal_process_form('editablefields',$form);
+  $eform=drupal_render($form);
+  return $eform;
       }
     }
     return $html;
@@ -403,11 +416,11 @@ function theme_views_editablefields_view_table_noform($view, $nodes, $type) {
   $html=theme('table', $view->table_header, $rows );
     if ($editable) {
       if ($nodes) {
-	$form['editablefields']['submit']= array('#type' => 'submit', '#value' => t('Submit'));
-	$form['editablefields']['#value']=$html;
-	drupal_process_form('editablefields',$form);
-	$eform=drupal_render($form);
-	return $eform;
+  $form['editablefields']['submit']= array('#type' => 'submit', '#value' => t('Submit'));
+  $form['editablefields']['#value']=$html;
+  drupal_process_form('editablefields',$form);
+  $eform=drupal_render($form);
+  return $eform;
       }
     }
     return $html;
@@ -462,6 +475,8 @@ function editablefields_views_pre_query(&$view)
     if (!$type) {
       return;
     }
+    unset ($_POST['editablefields_addnew_form']);
+  
     _editablefields_drupal_get_form(true,$type,$view);
   }
 }
@@ -488,9 +503,9 @@ function _editablefields_drupal_get_form($process=false, $type,$view) {
     if (preg_match('/^content: (field_.*)$/',$arg['type'],$matches)) {
       $fieldname=$matches[1];
       if (is_array($view->args[$id])) {
-	$form['editablefieldsfiltervalue_'.$fieldname]=array('#type'=>'value','#value'=>$view->args[$id]);
+  $form['editablefieldsfiltervalue_'.$fieldname]=array('#type'=>'value','#value'=>$view->args[$id]);
       } else {
-	$form['editablefieldsfiltervalue_'.$fieldname]=array('#type'=>'value','#value'=>array($view->args[$id]));
+  $form['editablefieldsfiltervalue_'.$fieldname]=array('#type'=>'value','#value'=>array($view->args[$id]));
       }
     }
   }
@@ -511,27 +526,27 @@ function _editablefields_drupal_get_form($process=false, $type,$view) {
   foreach ($form as $fn=>$fi) {
     foreach ($view->field as $vf=>$vfield) {
       if ($vfield['field']==$fn."_value") {
-  	$form[$fn]['#prefix']='<td>';
-  	$form[$fn]['#suffix']='</td>';
+    $form[$fn]['#prefix']='<td>';
+    $form[$fn]['#suffix']='</td>';
       }
     }
   }
 
   $newform=array();
-  $newform['form_editablefield_row']=array('#type' => 'fieldset', '#prefix' => '<tr class=form_edit_line>', '#suffix' => '</tr>');
-  $newform['form_editablefield_other']=array('#type' => 'fieldset', '#collapsible'=>'TRUE', '#collapsed'=>'TRUE', '#prefix' => '<tr class=form_edit_line><td colspan=0>', '#suffix' => '</td></tr>');
+  $newform['form_editablefield_row']=array('#type' => 'fieldset', '#prefix' => '<tr class=form_edit_line>', '#suffix' => '</tr>', '#weight' =>0);
+  $newform['form_editablefield_other']=array('#type' => 'fieldset', '#prefix' => '<tr class=form_edit_line><td colspan=0>', '#suffix' => '</td></tr>','#weight' =>10);
   foreach ($form as $fn=>$fi) {
-    if (is_array($form[$fn]) && $fn != '#validate') {
+    if (is_array($form[$fn]) && strncmp($fn,'#',1)!=0) {
       $inview=0;
       foreach ($view->field as $vf=>$vfield) {
-	if ($vfield['field']==$fn."_value") {
-	  $inview++;
-	}
+          if (strncmp($fn."_",$vfield['field'],strlen($fn)+1)==0) {
+    $inview++;
+  }
       }
       if ($inview) {
-	$newform['form_editablefield_row'][$fn]=$form[$fn];
+  $newform['form_editablefield_row'][$fn]=$form[$fn];
       } else {
-	$newform['form_editablefield_other'][$fn]=$form[$fn];
+  $newform['form_editablefield_other'][$fn]=$form[$fn];
       }
       //      unset($form[$fn]);
     } else {
@@ -562,10 +577,10 @@ function editablefields_form_alter($form_id, &$form) {
       $fieldname=$matches[1];
       foreach ($form[$fieldname] as $element=>$val) {
         if (is_array($val) && is_array($val['#default_value'])) {
-	  $form[$fieldname][$element]['#default_value']=$f['#value'];
-	  if (!$form[$fieldname][$element]['#options'][$f['#value'][0]]) {
-	     $form[$fieldname][$element]['#options'][$f['#value'][0]]=t('-- this --');
-	  }
+    $form[$fieldname][$element]['#default_value']=$f['#value'];
+    if (!$form[$fieldname][$element]['#options'][$f['#value'][0]]) {
+       $form[$fieldname][$element]['#options'][$f['#value'][0]]=t('-- this --');
+    }
         }
       }
     }
@@ -573,4 +588,3 @@ function editablefields_form_alter($form_id, &$form) {
 }
 
 
-?>
