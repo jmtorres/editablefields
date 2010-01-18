@@ -23,7 +23,10 @@ Drupal.editablefields.init = function() {
   $(this).children().hide();
   Drupal.editablefields.load(this);
 }
-  
+
+// Create a unique index for checkboxes
+Drupal.editablefields.checkbox_fix_index = 0;
+
 Drupal.editablefields.load = function(element) {
 
   if ($(element).hasClass("editablefields_REMOVE") ) {
@@ -44,8 +47,15 @@ Drupal.editablefields.load = function(element) {
         }
         $(element).html(response.content);
         Drupal.attachBehaviors(element);
-        $(element).find(':input').change(function() {
-          Drupal.editablefields.onchange(this);
+	var uniqNum = Drupal.editablefields.checkbox_fix_index++;
+        $(element).find(':input').each(function() {
+          // Create a unique id field for checkboxes 
+          if ($(this).attr("type") == 'checkbox' || $(this).attr("type") == 'radio') {
+            $(this).attr("id", $(this).attr("id") + '-' + uniqNum);
+          }
+          $(this).change(function() {
+            Drupal.editablefields.onchange(this);
+          });
         });
         $(element).removeClass('editablefields_throbber');
       },
@@ -59,6 +69,8 @@ Drupal.editablefields.load = function(element) {
 };
 
 Drupal.editablefields.onchange = function(element) {
+  var old_element = element;
+
   if (!$(element).hasClass('editablefields')) {
     element = $(element).parents('div.editablefields');
   }
@@ -66,11 +78,17 @@ Drupal.editablefields.onchange = function(element) {
   // Provide some feedback to the user while the form if being processed.
   $(element).addClass('editablefields_throbber');
 
+  var ser = $(element).find('form').serialize();
+  if ($(old_element).attr("type") == 'checkbox' && $(old_element).attr("checked") == '')
+  {
+	ser+='&' + escape($(old_element).attr("name")) + '=';
+  }
+
   // Send the field form.
   $.ajax({
      type: "POST",
      url: Drupal.settings.editablefields.url_submit, 
-     data: $(element).find('form').serialize() + "&nid=" + $(element).attr("nid") + "&field=" + $(element).attr("field")+ "&delta=" + $(element).attr("delta"),
+     data: ser + "&nid=" + $(element).attr("nid") + "&field=" + $(element).attr("field")+ "&delta=" + $(element).attr("delta"),
      element: $(element),
      success: function(msg) {
         $(element).removeClass('editablefields_throbber');
