@@ -155,6 +155,11 @@ Drupal.editablefields.load = function(element) {
           // Create a unique id field for checkboxes 
           if ($(this).attr("type") == 'checkbox' || $(this).attr("type") == 'radio') {
             $(this).attr("id", $(this).attr("id") + '-' + uniqNum);
+            // change the "for" attribute for the label so that we can still click on it
+            if($(this).parent('label').length) {
+              $(this).parent('label').attr("for", $(this).parent('label').attr("for") + '-' + uniqNum);
+            }
+
             $(this).click(function() {
               Drupal.editablefields.onchange(this);
             });
