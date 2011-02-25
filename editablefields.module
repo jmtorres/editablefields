@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 function editablefields_help($section = 'admin/help#editablefields') {
   switch ($section) {
