@@ -1,4 +1,3 @@
-// $Id$
 
 Drupal.behaviors.editablefields = function(context) {
   $('div.editablefields', context).not('.clicktoedit').not('.editablefields-processed').each(function() {
