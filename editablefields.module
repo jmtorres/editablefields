@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /* TODO db_next_id() is gone, and replaced as db_last_insert_id()
    Since db_next_id() introduce some problems, and the use of this function
