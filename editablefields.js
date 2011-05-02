@@ -42,6 +42,14 @@ Drupal.behaviors.editablefields = function(context) {
         else if ($(event.target).parent('.editablefields').not('.ajax-editable').length) {
           Drupal.editablefields.init.call($(event.target).parent('.editablefields'));
         }
+
+        $(event.target).filter('.editablefields-use-ctools-modal *').each(function() {  
+          var link = $(this).is('a') ? this : $(this).parents('a.editablefields-use-ctools-modal')[0];
+          if (typeof(link) != "undefined") {
+            Drupal.CTools.Modal.clickAjaxLink.apply(link);
+            event.preventDefault();
+          }
+        });
       }
     });
 
