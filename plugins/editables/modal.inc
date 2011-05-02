@@ -16,14 +16,22 @@
 /**
  * Plugins are described by creating a $plugin array which will be used
  * by the system that includes this file.
+ $items['field_edit/%/%/%node/%'] = array(
+    'title' => t('Edit Field'),
+    // TODO: access = access_edit(type_name, field_name) = right?
+    'access arguments' => array('access content'),
+    'page callback' => 'field_edit_render_form',
+    'page arguments' => array(1, 2, 3, 4),
+    'type' => MENU_CALLBACK,
+  );
  */
 $plugin = array(
   'title' => t('Editable Modal Widget'),
   'hook_menu' => array(
-    'editablefields/modal/%node/%' => array(
+    'editablefields/%/%/%node/%' => array(
       'page callback' => 'editablefields_modal',
       'access arguments' => array('access content'),
-      'page arguments' => array(2, 3),
+      'page arguments' => array(1, 2, 3, 4),
       'type' => MENU_CALLBACK,
       'title' => 'Modal View',
 //      'file' => 'editablefields.modal.inc',
@@ -32,8 +40,8 @@ $plugin = array(
   'formatter_info' => array(
     'editablefields_modal' => array(
       'label' => t('Editable Modal Widget'),
-      'field types' => array('datetime', 'text'),
-      'multiple values' => CONTENT_HANDLE_CORE
+      'field types' => array_keys(_content_field_types()),
+      'multiple values' => CONTENT_HANDLE_MODULE
     ),
   ),
 );
@@ -46,52 +54,41 @@ $plugin = array(
  * @param null $fields
  * @return void
  */
-function editablefields_modal($node, $fields = NULL) {
+function editablefields_modal($method, $responder = 'modal', $node, $field_name = NULL) {
+  
+  drupal_add_js(drupal_get_path('module', 'editablefields') . '/editablefields.js');
   ctools_include('ajax');
   ctools_include('modal');
-
-  $form_state =
-    array('ajax' => TRUE, 'node' => $node,
-      '_params' => array('field_name' => $fields, 'node_type' => $node->type));
-
-  $form_id = 'editablefields_modal_' . $node->type . '_' . $fields;
-  $form_id_css = str_replace('_', '-', $form_id);
-
-  $output = ctools_modal_form_wrapper('editablefields_modal_form', $form_state);
   ctools_include('plugins');
+  ctools_modal_add_js();
+
+  $form_state = array(
+    'ajax' => TRUE, 
+    'node' => $node,
+    '_params' => array('field_name' => $field_name, 'node_type' => $node->type)
+  );
+
+ 
+  $output = ctools_modal_form_wrapper('editablefields_modal_form', $form_state);
 
   if (!$output) {
     $output = array();
-    $output[] = ctools_ajax_command_replace('#modal-date-message-' . $node->nid,
-                                            '<div id="modal-date-message-'
-                                              . $node->nid . '">' .
-                                              $form_state['message']
-                                              . '</div>');
+    /*
+    $output[] = ctools_ajax_command_replace(
+      '#modal-date-message-' . $node->nid, 
+      '<div id="modal-date-message-' . $node->nid . '">' 
+      . $form_state['message']. '</div>'
+    );
+    */
     if ($replacements = $form_state['replacements']) {
-      foreach ($replacements as $nid_delta => $text) {
-        $css_id = $form_id_css . '-' . $nid_delta;
+      foreach ($replacements as $nid => $text) {
+        $css_id =  editablefields_modal_wrapper_id(array(
+          '#type_name' => $node->type,
+          '#field_name' => $field_name,
+          '#node' => $node
+        ));
         $output[] = ctools_ajax_command_replace(
-          '#' . $css_id . ' a > span', '<span>' . $text . '</span>');
-      }
-    }
-    $last_css_id = $css_id;
-    if ($additions = array_reverse($form_state['additions'])) {
-      foreach ($additions as $nid_delta => $text) {
-        $css_id = $form_id_css . '-' . $nid_delta;
-        $text = '<div id="' . $css_id . '">' . ctools_modal_text_button($text,
-                                                                        'editablefields_modal/'
-                                                                          . $node->nid
-                                                                          . '/'
-                                                                          . $fields,
-                                                                        $text)
-          . '</div>';
-        $output[] = ctools_ajax_command_after('#' . $last_css_id, $text);
-      }
-    }
-    if ($deletions = $form_state['deletions']) {
-      foreach ($deletions as $nid_delta => $remove) {
-        $output[] = ctools_ajax_command_remove(
-          '#' . $form_id_css . '-' . $nid_delta);
+          '#' . $css_id, '<div id="'. $css_id . '">' . $text . '</div>');
       }
     }
     $output[] = ctools_modal_command_dismiss();
@@ -148,42 +145,22 @@ function editablefields_modal_form_submit($form, &$form_state) {
       node_save($node);
       // $field['display_settings']['label']['format'] = 'hidden';
       // TODO: persist the original text formatter from original view
-      $old_values_count = count($old_values);
-      $new_values_count = count(_editablefields_filter_field_post_values($field,
-                                                                         $new_values));
 
       $content_set_empty = content_set_empty($field, $new_values);
-      $formatter =
-        $field['widget']['module'] . '_formatter_' . $field['default_format'];
+      $formatter = $field['widget']['module'] . '_formatter_' . $field['default_format'];
       foreach ((array)$node->{$field['field_name']} as $delta => $item) {
-        $item['#delta'] = $delta;
-        if ($delta < $old_values_count) {
-          $replacements["{$nid}-{$delta}"] = content_format($field, $item,
-                                                            'default', $node);
-        }
-        else {
-          $additions["{$nid}-{$delta}"] = content_format($field, $item,
-                                                         'default', $node);
-        }
+        $item['delta'] = $delta;
+        $replacements[$nid] .= editablefields_modal_link_text($field, $item, 'default', $node);
       }
-
-      if ($old_values_count > $new_values_count) {
-        $limit = $new_values_count;
-        for ($delta = $limit; $delta < $old_values_count; $delta++) {
-          $deletions["{$nid}-{$delta}"] = TRUE;
-        }
-
-      }
-
     }
   }
-  $form_state['redirect'][0] = $_GET['q'];
-  $form_state['redirect'][1] = drupal_query_string_encode($_GET, array('q'));
-  $form_state['message'] = t('Reservation has been updated');
+  
   $form_state += array(
     'replacements' => $replacements,
+    /*
     'additions' => $additions,
     'deletions' => $deletions,
+    */
   );
 }
 
@@ -204,62 +181,97 @@ function _editablefields_filter_field_post_values($field, $values) {
 
 
 /**
- * Default theme implementation for field_edit_widget.
- * TODO: turn this into an render api helper fuction.
+ * Default theme implementation for editablefields_modal.
  */
 function theme_editablefields_modal($element) {
   static $fields = array();
-  static $used_aliases = array();
-  drupal_add_js(drupal_get_path('module', 'field_edit') . '/js/field_edit.js');
+  static $views_field_edit_column = array();
+  $node = $element['#node'];
+  drupal_add_js(drupal_get_path('module', 'editablefields') . '/editablefields.js');
   ctools_include('ajax');
   ctools_include('modal');
   ctools_modal_add_js();
-  $node = $element['#node'];
+  
+  /**
+   * Keep track of the current Views row/column so we can apply 
+   * Views specified formatter settings.
+   */
+  if (!empty($node->field_edit)) {
+    $view = views_get_current_view();
+    if (empty($views_field_edit_column[$view->name][$view->row_index])) {
+      $views_field_edit_column[$view->name][$view->row_index] = 0;
+    }
+    $views_options = $node->field_edit[$views_field_edit_column[$view->name][$view->row_index]];
+    $views_field_edit_column[$view->name][$view->row_index]++;
+  }
+    
   $type = $element['#type_name'];
   $field_name = $element['#field_name'];
-  $context =
-    !empty($node->content) && !empty($node->content[$field_name]) ?
-      $node->content[$field_name]['#context'] : 'full';
-
+  $context = !empty($node->content) && !empty($node->content[$field_name]) ? $node->content[$field_name]['#context'] : 'full';
+  
   if (empty($fields[$type][$field_name])) {
     $fields[$type][$field_name] = content_fields($field_name, $type);
   }
-
+  
   $field = $fields[$type][$field_name];
-  $options = editablefields_formatter_get_settings($field_name, $type,
-                                                   $context);
-  if (!empty($node->field_edit) && !empty($node->field_edit[$field_name])) {
-    foreach ($node->field_edit[$field_name] as $alias => $format_options) {
-      if (!in_array($alias, $used_aliases)) {
-        $options = $format_options;
-      }
+  $options = editablefields_formatter_get_settings($field_name, $type, $context);
+  if (!empty($views_options)) {
+    $options = $views_options;
+  }
+
+  $text_formatter = ($options['text_formatter']) ? $options['text_formatter'] : 'default';
+  $css_id = editablefields_modal_wrapper_id($element);
+  foreach ($element as $delta => $item) {
+    if (is_integer($delta)) {
+      $link_text .= editablefields_modal_link_text($field, $item['#item'], $text_formatter, $node);
     }
   }
-
-  $text_formatter =
-    ($options['text_formatter']) ? $options['text_formatter'] : 'default';
-  $display_data = content_format($field, $element['#item'], $text_formatter,
-                                 $node);
-
-  if ($display_data == '') {
-    $display_data = '<span>' . t('Not Set') . '</span>';
-  }
-  else {
-    $display_data = '<span>' . $display_data . '</span>';
-  }
-
-  $form_id = 'editablefields_modal_' . $element['#type_name'] . '_' .
-    $element['#field_name'];
-  $css_id =
-    str_replace('_', '-', $form_id) . '-' . $element['#node']->nid . '-' .
-      $element['#item']['#delta'];
-  $form_url = 'editablefields/modal/' .$element['#node']->nid . '/' .
-    $element['#field_name'];
-  $output =
-    '<div id="' . $css_id . '">' .
-      ctools_modal_text_button($display_data, $form_url, $display_data)
-      . '</div>';
+  
+  $link_text = '<div id="' . $css_id . '">' . $link_text . '</div>';
+  $output =  editablefields_modal_text_button($link_text, 'editablefields/nojs/modal/' . $element['#node']->nid . '/' . $element['#field_name'] , check_plain($link_text));
   ctools_include('plugins');
   return $output;
-
 }
+
+function editablefields_modal_link_text($field, $item, $formatter_name, $node) {
+  // Other module's formatters might be doing something just as exotic
+  // as we are but we can only allow tags that won't mess with our button.
+  // We use filter_xss just for its html stripping magic.
+  $allowed_tags = array('img', 'div', 'span', 'em', 'strong', 'cite', 'ul', 'ol', 'li', 'dl', 'dt', 'dd'); 
+  $output = filter_xss(content_format($field, $item, $formatter_name, $node), $allowed_tags);
+  
+  if ($output) {
+    return $output;
+  }
+  else {
+    return t('Not set');
+  }
+}
+
+/**
+ * Render text as a link. This will automatically apply an AJAX class
+ * to the link and add the appropriate javascript to make this happen.
+ *
+ * Note: 'html' => true so be sure any text is vetted! Chances are these kinds of buttons will
+ * not use user input so this is a very minor concern.
+ *
+ * @param $image
+ *   The path to an image to use that will be sent to theme('image') for rendering.
+ * @param $dest
+ *   The destination of the link.
+ * @param $alt
+ *   The alt text of the link.
+ * @param $class
+ *   Any class to apply to the link. @todo this should be a options array.
+ */
+function editablefields_modal_text_button($text, $dest, $alt, $class = '') {
+  return ctools_ajax_text_button($text, $dest, $alt, $class, 'editablefields-use-ctools-modal');
+}
+
+function editablefields_modal_wrapper_id($element) {
+  return 'editablefields-modal-' . $element['#type_name'] . '-' . $element['#field_name'] . '-' . $element['#node']->nid;
+}
+
+
+
+
