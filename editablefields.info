@@ -1,5 +1,6 @@
 name = Editablefields
 description = "Allows you to make some view fields editable"
+dependencies[] = ctools
 dependencies[] = content
 dependencies[] = ajax_load
 dependencies[] = jquery_update
