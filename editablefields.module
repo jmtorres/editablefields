@@ -5,6 +5,9 @@
  * Editable fields module.
  */
 
+require_once(drupal_get_path('module', 'editablefields') . '/editablefields.modal.inc');
+
+
 /**
  * Implementation of hook_menu_alter
  */
@@ -23,6 +26,15 @@ function editablefields_menu_alter(&$items) {
 function editablefields_menu() {
   global $user;
   $items = array();
+
+  $items['editablefields_modal/%node/%'] = array(
+    'page callback' => 'editablefields_modal',
+    'access arguments' => array('access content'),
+    'page arguments' => array(1, 2),
+    'type' => MENU_CALLBACK,
+    'title' => 'Modal View',
+    'file' => 'editablefields.modal.inc',
+  );
 
   // Admin pages:
   $items['editablefields_view'] = array(
@@ -70,7 +82,11 @@ function editablefields_theme() {
     'editablefields_clicktoedit_message_empty' => array(
       'arguments' => array(),
       ),
-    );
+    'editablefields_formatter_editablefields_modal' => array(
+      'arguments' => array('element' => NULL),
+      'function' => 'theme_editablefields_modal',
+    ),
+  );
 }
 
 /**
@@ -90,7 +106,11 @@ function editablefields_field_formatter_info() {
       'label' => t('Click to Edit'),
       'field types' => array_keys(_content_field_types()),
       ),
-    );
+    'editablefields_modal' => array('label' => t('Editable Modal Widget'),
+      'field types' => array('datetime', 'text'),
+      'multiple values' => CONTENT_HANDLE_CORE
+    ),
+  );
 }
 
 /**
@@ -490,3 +510,19 @@ function editablefields_file_insert($file) {
     node_save($node);
   }
 }
+
+
+function editablefields_formatter_get_settings($field_name, $type_name, $context) {
+  $options = array();
+  $value = 'field_edit:'. $type_name .':'. $context .':'. $field_name;
+  $options['field_edit_text_formatter'] = variable_get($value . '_text_formatter', 'default');
+  /*
+  $options['repeat']['show_repeat_rule'] = variable_get($value .'_show_repeat_rule', 'show');
+  $options['multiple']['multiple_number'] = variable_get($value .'_multiple_number', '');
+  $options['multiple']['multiple_from'] = variable_get($value .'_multiple_from', '');
+  $options['multiple']['multiple_to'] = variable_get($value .'_multiple_to', '');
+  $options['fromto']['fromto'] = variable_get($value .'_fromto', 'both')
+  */
+  return $options;
+}
+
