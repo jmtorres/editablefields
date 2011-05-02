@@ -16,14 +16,6 @@
 /**
  * Plugins are described by creating a $plugin array which will be used
  * by the system that includes this file.
- $items['field_edit/%/%/%node/%'] = array(
-    'title' => t('Edit Field'),
-    // TODO: access = access_edit(type_name, field_name) = right?
-    'access arguments' => array('access content'),
-    'page callback' => 'field_edit_render_form',
-    'page arguments' => array(1, 2, 3, 4),
-    'type' => MENU_CALLBACK,
-  );
  */
 $plugin = array(
   'title' => t('Editable Modal Widget'),
@@ -34,7 +26,7 @@ $plugin = array(
       'page arguments' => array(1, 2, 3, 4),
       'type' => MENU_CALLBACK,
       'title' => 'Modal View',
-//      'file' => 'editablefields.modal.inc',
+      'file' => 'modal.inc',
     ),
   ),
   'formatter_info' => array(
@@ -44,14 +36,26 @@ $plugin = array(
       'multiple values' => CONTENT_HANDLE_MODULE
     ),
   ),
+  'build modes' => array(
+    'modal' => array(
+      'title' => t('Modal'),
+      'views style' => FALSE,
+    ),
+  )
 );
 
 
 /**
  * Menu callback.
  *
- * @param  $node
- * @param null $fields
+ * @param $method 
+ *  'ajax' or 'nojs'
+ * @param $responder
+ *  The ajax responder being used for this page request.
+ * @param $node
+ *  The node to be edited.
+ * @param $field_name
+ *  The field to be edited.
  * @return void
  */
 function editablefields_modal($method, $responder = 'modal', $node, $field_name = NULL) {
@@ -73,13 +77,6 @@ function editablefields_modal($method, $responder = 'modal', $node, $field_name 
 
   if (!$output) {
     $output = array();
-    /*
-    $output[] = ctools_ajax_command_replace(
-      '#modal-date-message-' . $node->nid, 
-      '<div id="modal-date-message-' . $node->nid . '">' 
-      . $form_state['message']. '</div>'
-    );
-    */
     if ($replacements = $form_state['replacements']) {
       foreach ($replacements as $nid => $text) {
         $css_id =  editablefields_modal_wrapper_id(array(
@@ -143,24 +140,18 @@ function editablefields_modal_form_submit($form, &$form_state) {
       $node->{$field['field_name']} = $new_values;
       $node = node_submit($node);
       node_save($node);
-      // $field['display_settings']['label']['format'] = 'hidden';
+      
       // TODO: persist the original text formatter from original view
-
       $content_set_empty = content_set_empty($field, $new_values);
-      $formatter = $field['widget']['module'] . '_formatter_' . $field['default_format'];
       foreach ((array)$node->{$field['field_name']} as $delta => $item) {
         $item['delta'] = $delta;
-        $replacements[$nid] .= editablefields_modal_link_text($field, $item, 'default', $node);
+        $replacements[$nid] .= editablefields_modal_link_text($field, $item, $field['display_settings']['modal']['format'], $node);
       }
     }
   }
   
   $form_state += array(
     'replacements' => $replacements,
-    /*
-    'additions' => $additions,
-    'deletions' => $deletions,
-    */
   );
 }
 
@@ -218,8 +209,9 @@ function theme_editablefields_modal($element) {
   if (!empty($views_options)) {
     $options = $views_options;
   }
-
-  $text_formatter = ($options['text_formatter']) ? $options['text_formatter'] : 'default';
+  
+  // dpm($field);
+  $text_formatter = ($options['text_formatter']) ? $options['text_formatter'] : $field['display_settings']['modal']['format'];
   $css_id = editablefields_modal_wrapper_id($element);
   foreach ($element as $delta => $item) {
     if (is_integer($delta)) {
