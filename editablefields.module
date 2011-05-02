@@ -5,7 +5,8 @@
  * Editable fields module.
  */
 
-require_once(drupal_get_path('module', 'editablefields') . '/editablefields.modal.inc');
+require_once(
+  drupal_get_path('module', 'editablefields') . '/editablefields.modal.inc');
 
 
 /**
@@ -13,7 +14,7 @@ require_once(drupal_get_path('module', 'editablefields') . '/editablefields.moda
  */
 function editablefields_menu_alter(&$items) {
   // takeover the filefield ahah callback. This is a temporary hackish solution.
-  if(isset($items['filefield/ahah/%/%/%'])) {
+  if (isset($items['filefield/ahah/%/%/%'])) {
     $items['filefield/ahah/%/%/%'] = array(
       'page callback' => 'editablefields_filefield_js',
     ) + $items['filefield/ahah/%/%/%'];
@@ -42,19 +43,19 @@ function editablefields_menu() {
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
     'title' => 'ajax view',
-    );
+  );
   $items['editablefields_html'] = array(
     'page callback' => 'editablefields_html',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
     'title' => 'ajax form',
-    );
+  );
   $items['editablefields_submit'] = array(
     'page callback' => 'editablefields_submit',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
     'title' => 'ajax submit',
-    );
+  );
 
   return $items;
 }
@@ -67,21 +68,21 @@ function editablefields_theme() {
     'editablefields_formatter_editable' => array(
       'arguments' => array('element' => NULL),
       'function' => 'theme_editablefields_formatter_editable',
-      ),
+    ),
     'editablefields_formatter_editable_html' => array(
       'arguments' => array('element' => NULL),
       'function' => 'theme_editablefields_formatter_editable',
-      ),
+    ),
     'editablefields_formatter_clicktoedit' => array(
       'arguments' => array('element' => NULL),
       'function' => 'theme_editablefields_formatter_editable',
-      ),
+    ),
     'editablefields_clicktoedit_message' => array(
       'arguments' => array(),
-      ),
+    ),
     'editablefields_clicktoedit_message_empty' => array(
       'arguments' => array(),
-      ),
+    ),
     'editablefields_formatter_editablefields_modal' => array(
       'arguments' => array('element' => NULL),
       'function' => 'theme_editablefields_modal',
@@ -97,15 +98,15 @@ function editablefields_field_formatter_info() {
     'editable' => array(
       'label' => t('Editable (Ajax)'),
       'field types' => array_keys(_content_field_types()),
-      ),
+    ),
     'editable_html' => array(
       'label' => t('Editable (HTML)'),
       'field types' => array_keys(_content_field_types()),
-      ),
+    ),
     'clicktoedit' => array(
       'label' => t('Click to Edit'),
       'field types' => array_keys(_content_field_types()),
-      ),
+    ),
     'editablefields_modal' => array('label' => t('Editable Modal Widget'),
       'field types' => array('datetime', 'text'),
       'multiple values' => CONTENT_HANDLE_CORE
@@ -127,11 +128,14 @@ function theme_editablefields_formatter_editable($element) {
   $delta = $element['#item']['#delta'];
 
   // to disable overriding textareas just set this variable to 0
-  if(variable_get('editablefields_textareas_resizable_threshold', 25)) {
+  if (variable_get('editablefields_textareas_resizable_threshold', 25)) {
     static $textareas_count = 0;
-    if($field['type'] == 'text' && $field['widget']['type'] == 'text_textarea') {
-      if ($textareas_count++ >= variable_get('editablefields_textareas_resizable_threshold', 25)) {
-        drupal_add_js(drupal_get_path('module', 'editablefields') . '/editablefields_overrides.js');
+    if (
+      $field['type'] == 'text' && $field['widget']['type'] == 'text_textarea') {
+      if ($textareas_count++
+        >= variable_get('editablefields_textareas_resizable_threshold', 25)) {
+        drupal_add_js(drupal_get_path('module', 'editablefields')
+                        . '/editablefields_overrides.js');
       }
     }
   }
@@ -152,12 +156,15 @@ function theme_editablefields_formatter_editable($element) {
       if (!isset($js_ready)) {
         $js_ready = TRUE;
         drupal_add_js('misc/jquery.form.js');
-        drupal_add_js(drupal_get_path('module', 'editablefields') . '/editablefields.js');
-        drupal_add_css(drupal_get_path('module', 'editablefields') . '/editablefields.css');
+        drupal_add_js(
+          drupal_get_path('module', 'editablefields') . '/editablefields.js');
+        drupal_add_css(
+          drupal_get_path('module', 'editablefields') . '/editablefields.css');
 
         $settings = array(
           'url_html' => url('editablefields_html', array('absolute' => TRUE)),
-          'url_submit' => url('editablefields_submit', array('absolute' => TRUE)),
+          'url_submit' => url('editablefields_submit',
+                              array('absolute' => TRUE)),
           'url_view' => url('editablefields_view', array('absolute' => TRUE)),
           'clicktoedit_message' => theme('editablefields_clicktoedit_message'),
           'clicktoedit_message_empty' => theme('editablefields_clicktoedit_message_empty'),
@@ -166,7 +173,8 @@ function theme_editablefields_formatter_editable($element) {
       }
 
       // [andreiashu] not sure how this works exactly but it does...
-      if (content_handle('widget', 'multiple values', $field) != CONTENT_HANDLE_CORE) {
+      if (content_handle('widget', 'multiple values', $field)
+        != CONTENT_HANDLE_CORE) {
         if ($delta != 0) {
           return;
         }
@@ -184,7 +192,8 @@ function theme_editablefields_formatter_editable($element) {
         $class .= " editablefields-html-load";
       }
 
-      $pre = '<div class="' . $class . '" nid="' . $node->nid . '" field="' . $field_name . '" delta="' . $delta . '">';
+      $pre = '<div class="' . $class . '" nid="' . $node->nid . '" field="'
+        . $field_name . '" delta="' . $delta . '">';
       $post = '</div>';
 
       if ($element['#formatter'] != 'editable_html') {
@@ -204,18 +213,22 @@ function theme_editablefields_formatter_editable($element) {
       else {
         // $node seems to be incomplete, so we reload it
         $node = node_load($node->nid, $revision);
-        return $pre . drupal_get_form('editablefields_form', $node, $field_name, $delta) . $post;
+        return $pre
+          . drupal_get_form('editablefields_form', $node, $field_name, $delta)
+          . $post;
       }
     }
   }
 }
 
 function theme_editablefields_clicktoedit_message() {
-  return '<span class="editablefields_clicktoedit_message editablefields-hide">'. t('[edit]') .'</span>';
+  return '<span class="editablefields_clicktoedit_message editablefields-hide">'
+    . t('[edit]') . '</span>';
 }
 
 function theme_editablefields_clicktoedit_message_empty() {
-  return '<span class="editablefields_clicktoedit_message">'. t('[edit]') .'</span>';
+  return '<span class="editablefields_clicktoedit_message">' . t('[edit]')
+    . '</span>';
 }
 
 /**
@@ -236,7 +249,7 @@ function editablefields_forms() {
 function editablefields_form_builder(&$form_state, $node, $field_name, $delta) {
   $field = content_fields($field_name);
   $form = array('#node' => $node);
-//  $form_state = array('values' => array($field['field_name'] => $default_value));
+  //  $form_state = array('values' => array($field['field_name'] => $default_value));
   module_load_include('inc', 'content', 'includes/content.node_form');
   $form['#field_info'] = array($field['field_name'] => $field);
   $form = content_field_form($form, $form_state, $field, $delta);
@@ -269,6 +282,7 @@ function _editablefields_pre_render(&$form) {
   }
   return $form;
 }
+
 /**
  * Menu callback: ajax view.
  */
@@ -279,22 +293,22 @@ function editablefields_view() {
   $delta = arg(3);
   $node = node_load($nid);
   drupal_set_header('Content-Type: text; charset=utf-8');
-//  $html = node_view($node, FALSE, FALSE, FALSE);
+  //  $html = node_view($node, FALSE, FALSE, FALSE);
   // this required traversing the entire node to get the field (and doesn't work
   // for checkboxes anyway)
 
   $field = content_fields($field_name, $node->type);
 
-  $field['display_settings']['label']['format']='hidden';
+  $field['display_settings']['label']['format'] = 'hidden';
   // We have 2 reasonable choices here. We COULD use 'clicktoedit' and end up
   // with the same HTML - then we could strip that HTML down to remove the
   // surrounding 'click to edit' div (which we dont want, as we'll be replacing
   // the html inside one of those div's)
   // or we can simply use the 'defualt' formatter - which wont have the click to
   // edit inside it  - and is hard coded into this module (for now) anyway!
-  $field['display_settings']['full']['format']='default';
-  $html=content_view_field($field,$node);
-  
+  $field['display_settings']['full']['format'] = 'default';
+  $html = content_view_field($field, $node);
+
   $messages = drupal_get_messages('status', TRUE);
   if (count($messages) > 0) {
     foreach ($messages as $type => $messages) {
@@ -305,7 +319,8 @@ function editablefields_view() {
   }
 
   $object = new stdClass();
-  $object->content = $output . $html.drupal_render($node->content[$field_name]);
+  $object->content =
+    $output . $html . drupal_render($node->content[$field_name]);
   drupal_json($object);
   exit();
 }
@@ -346,10 +361,12 @@ function editablefields_submit() {
 
   $node = node_load($nid);
 
-  $node_options = variable_get('node_options_'. $node->type, array('status', 'promote'));
+  $node_options = variable_get(
+    'node_options_' . $node->type, array('status', 'promote'));
   $node->revision = in_array('revision', $node_options);
-  if($node->revision) {
-    $node->log = t('%field_name updated by editablefields.', array('%field_name' => $field_name));
+  if ($node->revision) {
+    $node->log = t('%field_name updated by editablefields.',
+                   array('%field_name' => $field_name));
   }
 
   if (node_access('update', $node)) {
@@ -381,13 +398,15 @@ function editablefields_submit() {
       }
 
       if (isset($items['value'])) {
-        if (!($field['widget']['type'] == 'optionwidgets_buttons' && $field['multiple'])) {
+        if (!($field['widget']['type'] == 'optionwidgets_buttons' &&
+          $field['multiple'])) {
           $items = array($items);
         }
       }
 
       // go through content_set_empty if this is NOT a checkbox multi valued element
-      if (!($field['widget']['type'] == 'optionwidgets_buttons' && $field['multiple'])) {
+      if (!($field['widget']['type'] == 'optionwidgets_buttons' &&
+        $field['multiple'])) {
         $items = content_set_empty($field, $items);
       }
 
@@ -401,7 +420,8 @@ function editablefields_submit() {
           break;
       }
 
-      drupal_execute('editablefields_form', $form_state, $node, $field_name, $delta);
+      drupal_execute('editablefields_form', $form_state, $node, $field_name,
+                     $delta);
 
       $err = drupal_get_messages();
 
@@ -417,8 +437,10 @@ function editablefields_submit() {
       }
 
       // the matrix field identifies itself as being multivalue, but in fact, it is not.
-      if ((content_handle('widget', 'multiple values', $field) == CONTENT_HANDLE_CORE) && ($field['type'] != matrix)) {
-        if ($node->{$field_name}[$delta] != $form_state['values'][$field_name][0]) {
+      if ((content_handle('widget', 'multiple values', $field)
+        == CONTENT_HANDLE_CORE) && ($field['type'] != matrix)) {
+        if ($node->{$field_name}[$delta] !=
+          $form_state['values'][$field_name][0]) {
           $node->{$field_name}[$delta] = $form_state['values'][$field_name][0];
           node_save($node);
         }
@@ -434,7 +456,8 @@ function editablefields_submit() {
     }
     else {
       drupal_set_header('HTTP/1.1 404 Not Found');
-      print t('No field found, of name: %field', array('%field' => $field_name));
+      print t('No field found, of name: %field',
+              array('%field' => $field_name));
     }
   }
   else {
@@ -449,11 +472,13 @@ function editablefields_submit() {
  * If the Remove button was clicked remove the file from the node.
  */
 function editablefields_filefield_js($type_name, $field_name, $delta) {
-  if (!empty($_POST['editablefields_node_nid']) && $node = node_load($_POST['editablefields_node_nid'])) {
+  if (!empty($_POST['editablefields_node_nid']) &&
+    $node = node_load($_POST['editablefields_node_nid'])) {
     $remove_button_clicked = FALSE;
-    foreach($_POST as $key => $value) {
+    foreach ($_POST as $key => $value) {
       // check if the remove button was clicked
-      if(stripos($key, $field_name) === 0 && stripos($key, '_filefield_remove') !== FALSE) {
+      if (stripos($key, $field_name) === 0 &&
+        stripos($key, '_filefield_remove') !== FALSE) {
         $remove_button_clicked = TRUE;
         break;
       }
@@ -462,13 +487,15 @@ function editablefields_filefield_js($type_name, $field_name, $delta) {
     if ($remove_button_clicked) {
       $field = $_POST[$field_name];
       $field = array_pop($field);
-      $file = (object) field_file_load($field['fid']);
+      $file = (object)field_file_load($field['fid']);
 
       // respect revision settings
-      $node_options = variable_get('node_options_'. $node->type, array('status', 'promote'));
+      $node_options = variable_get(
+        'node_options_' . $node->type, array('status', 'promote'));
       $node->revision = in_array('revision', $node_options);
-      if($node->revision) {
-        $node->log = t('%field_name updated by editablefields.', array('%field_name' => $field_name));
+      if ($node->revision) {
+        $node->log = t('%field_name updated by editablefields.',
+                       array('%field_name' => $field_name));
       }
 
       $file->field_name = $field_name;
@@ -477,7 +504,8 @@ function editablefields_filefield_js($type_name, $field_name, $delta) {
       $node->{$field_name}[$delta] = array();
       node_save($node);
 
-      drupal_set_message(t('File %filename was removed from node.', array('%filename' => $file->filename)));
+      drupal_set_message(t('File %filename was removed from node.',
+                           array('%filename' => $file->filename)));
     }
   }
 
@@ -488,8 +516,10 @@ function editablefields_filefield_js($type_name, $field_name, $delta) {
  * Implementation of hook_file_insert
  */
 function editablefields_file_insert($file) {
-  if (stripos($_GET['q'], 'filefield/ahah/') === 0 && !empty($_POST['editablefields_node_nid']) && $node = node_load($_POST['editablefields_node_nid'])) {
-    $file_clone = (array) $file;
+  if (stripos($_GET['q'], 'filefield/ahah/') === 0 && !empty(
+  $_POST['editablefields_node_nid']) &&
+    $node = node_load($_POST['editablefields_node_nid'])) {
+    $file_clone = (array)$file;
     field_file_save($node, $file_clone);
 
     $q_arr = explode('/', $_GET['q']);
@@ -501,10 +531,12 @@ function editablefields_file_insert($file) {
     );
 
     // respect revision settings
-    $node_options = variable_get('node_options_'. $node->type, array('status', 'promote'));
+    $node_options = variable_get(
+      'node_options_' . $node->type, array('status', 'promote'));
     $node->revision = in_array('revision', $node_options);
-    if($node->revision) {
-      $node->log = t('%field_name updated by editablefields.', array('%field_name' => $field_name));
+    if ($node->revision) {
+      $node->log = t('%field_name updated by editablefields.',
+                     array('%field_name' => $field_name));
     }
 
     node_save($node);
@@ -514,8 +546,9 @@ function editablefields_file_insert($file) {
 
 function editablefields_formatter_get_settings($field_name, $type_name, $context) {
   $options = array();
-  $value = 'field_edit:'. $type_name .':'. $context .':'. $field_name;
-  $options['field_edit_text_formatter'] = variable_get($value . '_text_formatter', 'default');
+  $value = 'field_edit:' . $type_name . ':' . $context . ':' . $field_name;
+  $options['field_edit_text_formatter'] = variable_get(
+    $value . '_text_formatter', 'default');
   /*
   $options['repeat']['show_repeat_rule'] = variable_get($value .'_show_repeat_rule', 'show');
   $options['multiple']['multiple_number'] = variable_get($value .'_multiple_number', '');
