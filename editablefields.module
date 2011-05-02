@@ -642,9 +642,8 @@ function editablefields_file_insert($file) {
 
 function editablefields_formatter_get_settings($field_name, $type_name, $context) {
   $options = array();
-  $value = 'field_edit:' . $type_name . ':' . $context . ':' . $field_name;
-  $options['field_edit_text_formatter'] = variable_get(
-    $value . '_text_formatter', 'default');
+  $value = 'editablefields:'. $type_name .':'. $context .':'. $field_name;
+  $options['editablefields'] = variable_get($value . '_text_formatter', 'default');
   /*
   $options['repeat']['show_repeat_rule'] = variable_get($value .'_show_repeat_rule', 'show');
   $options['multiple']['multiple_number'] = variable_get($value .'_multiple_number', '');
