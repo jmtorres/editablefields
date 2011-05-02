@@ -208,6 +208,57 @@ function editablefields_field_formatter_info() {
 }
 
 /**
+ * Implementation of hook_content_build_modes().
+ */
+function editablefields_content_build_modes() {
+  // Tell CCK about our "build" modes so that users can specify
+  // how they want the text in their modal/other link to be formatted
+  // on the Display Fields tab of the CCK admin.
+  $build_modes = array(
+    'editablefields' => array(
+      'title' => t('Editable'),
+      'build modes' => array(
+        'inline-form' => array(
+          'title' => 'Inline Form',
+          'views style' => FALSE
+        )
+      ),
+    ),
+  );
+  $plugins = editablefields_get_plugins();
+  foreach($plugins as $plugin_name => $plugin) {
+    foreach($plugin['build modes'] as $mode_name => $mode_info) {
+      $build_modes['editablefields']['build modes'][$mode_name] = $mode_info;    
+    }
+  }
+  return $build_modes;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function editablefields_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'content_display_overview_form') {
+    // Remove editable field formatters from the options.
+    if ($form['#contexts'] == 'editablefields') {
+      $formatters = editablefields_field_formatter_info();
+      foreach($form as $key => &$element) {
+        if (substr($key, 0, 6) == 'field_') {
+          foreach($element as $setting_name => &$setting) {
+            if (!empty($setting['format'])) {
+              foreach($formatters as $formatter_name => $formatter) {
+                unset($setting['format']['#options'][$formatter_name]);
+                unset($setting['format']['base']['#options'][$formatter_name]);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
  * Theme the editable field.
  */
 function theme_editablefields_formatter_editable($element) {
