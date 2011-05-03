@@ -214,21 +214,19 @@ function editablefields_content_build_modes() {
   // Tell CCK about our "build" modes so that users can specify
   // how they want the text in their modal/other link to be formatted
   // on the Display Fields tab of the CCK admin.
-  $build_modes = array(
-    'editablefields' => array(
-      'title' => t('Editable'),
-      'build modes' => array(
-        'inline-form' => array(
-          'title' => 'Inline Form',
-          'views style' => FALSE
-        )
-      ),
-    ),
-  );
+  $build_modes = array();
   $plugins = editablefields_get_plugins();
-  foreach($plugins as $plugin_name => $plugin) {
-    foreach($plugin['build modes'] as $mode_name => $mode_info) {
-      $build_modes['editablefields']['build modes'][$mode_name] = $mode_info;    
+  if (!empty($plugins)) {
+    $build_modes = array(
+      'editablefields' => array(
+        'title' => t('Editable'),
+        'build modes' => array(),
+      ),
+    );
+    foreach($plugins as $plugin_name => $plugin) {
+      foreach($plugin['build modes'] as $mode_name => $mode_info) {
+        $build_modes['editablefields']['build modes'][$mode_name] = $mode_info;    
+      }
     }
   }
   return $build_modes;

@@ -42,11 +42,21 @@ Drupal.behaviors.editablefields = function(context) {
         else if ($(event.target).parent('.editablefields').not('.ajax-editable').length) {
           Drupal.editablefields.init.call($(event.target).parent('.editablefields'));
         }
-
+        
+        //TODO: plugin classes and event callbacks should be in js settings
         $(event.target).filter('.editablefields-use-ctools-modal *').each(function() {  
           var link = $(this).is('a') ? this : $(this).parents('a.editablefields-use-ctools-modal')[0];
           if (typeof(link) != "undefined") {
             Drupal.CTools.Modal.clickAjaxLink.apply(link);
+            event.preventDefault();
+          }
+        });
+        
+        $(event.target).filter('.editablefields-use-inline *').each(function() {  
+          var link = $(this).is('a') ? this : $(this).parents('a.editablefields-use-inline')[0];
+          if (typeof(link) != "undefined") {
+            Drupal.editablefields.inline.clickAjaxLink.apply(link);
+            //console.log('inline');
             event.preventDefault();
           }
         });
@@ -69,6 +79,41 @@ Drupal.editablefields = {};
 
 // Create a unique index for checkboxes
 Drupal.editablefields.checkbox_fix_index = 0;
+
+Drupal.editablefields.inline = {};
+Drupal.editablefields.inline.clickAjaxLink = function() {
+  if ($(this).hasClass('ctools-ajaxing')) {
+    return false;
+  }
+
+  var url = $(this).attr('href');
+  var object = $(this);
+  $(this).addClass('ctools-ajaxing');
+  try {
+    url = url.replace(/\/nojs(\/|$)/g, '/ajax$1');
+    $.ajax({
+      type: "POST",
+      url: url,
+      data: { 'js': 1, 'ctools_ajax': 1},
+      global: true,
+      success: Drupal.CTools.AJAX.respond,
+      error: function(xhr) {
+        Drupal.CTools.AJAX.handleErrors(xhr, url);
+      },
+      complete: function() {
+        $('.ctools-ajaxing').removeClass('ctools-ajaxing');
+      },
+      dataType: 'json'
+    });
+  }
+  catch (err) {
+    alert("An error occurred while attempting to process " + url);
+    $('.ctools-ajaxing').removeClass('ctools-ajaxing');
+    return false;
+  }
+
+  return false;
+}
 
 Drupal.editablefields.init = function() {
   $(this).unbind("click");

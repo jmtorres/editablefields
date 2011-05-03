@@ -13,27 +13,27 @@
  * by the system that includes this file.
  */
 $plugin = array(
-  'title' => t('Editable Modal Widget'),
+  'title' => t('Editable Inline Widget'),
   'hook_menu' => array(
-    'editablefields/%/modal/%node/%' => array(
-      'page callback' => 'editablefields_modal',
+    'editablefields/%/inline/%node/%' => array(
+      'page callback' => 'editablefields_inline',
       'access arguments' => array('access content'),
       'page arguments' => array(1, 2, 3, 4),
       'type' => MENU_CALLBACK,
-      'title' => 'Modal View',
-      'file' => 'modal.inc',
+      'title' => t('Inline Widget'),
+      'file' => 'inline.inc',
     ),
   ),
   'formatter_info' => array(
-    'editablefields_modal' => array(
-      'label' => t('Editable Modal Widget'),
+    'editablefields_inline' => array(
+      'label' => t('Editable Inline Widget'),
       'field types' => array_keys(_content_field_types()),
       'multiple values' => CONTENT_HANDLE_MODULE
     ),
   ),
   'build modes' => array(
-    'modal' => array(
-      'title' => t('Modal'),
+    'inline' => array(
+      'title' => t('Inline'),
       'views style' => FALSE,
     ),
   )
@@ -53,13 +53,11 @@ $plugin = array(
  *  The field to be edited.
  * @return void
  */
-function editablefields_modal($method, $responder = 'modal', $node, $field_name = NULL) {
+function editablefields_inline($method, $responder = 'inline', $node, $field_name = NULL) {
   
   drupal_add_js(drupal_get_path('module', 'editablefields') . '/editablefields.js');
   ctools_include('ajax');
-  ctools_include('modal');
   ctools_include('plugins');
-  ctools_modal_add_js();
 
   $form_state = array(
     'ajax' => TRUE, 
@@ -67,8 +65,7 @@ function editablefields_modal($method, $responder = 'modal', $node, $field_name 
     '_params' => array('field_name' => $field_name, 'node_type' => $node->type)
   );
 
- 
-  $output = ctools_modal_form_wrapper('editablefields_modal_form', $form_state);
+  $output = editablefields_inline_form_wrapper('editablefields_' . $responder . '_form', $form_state);
 
   if (!$output) {
     $output = array();
@@ -83,7 +80,7 @@ function editablefields_modal($method, $responder = 'modal', $node, $field_name 
           '#' . $css_id, '<div id="'. $css_id . '">' . $text . '</div>');
       }
     }
-    $output[] = ctools_modal_command_dismiss();
+    // $output[] = ctools_modal_command_dismiss();
   }
   ctools_ajax_render($output);
 }
@@ -93,7 +90,7 @@ function editablefields_modal($method, $responder = 'modal', $node, $field_name 
  * Form API form function for field_edit_form.
  * Returns a form api definition for editing fields.
  */
-function editablefields_modal_form(&$form_state) {
+function editablefields_inline_form(&$form_state) {
   $form = array();
   $params = empty($form_state['_params']) ? array() : $form_state['_params'];
   module_load_include('inc', 'content', 'includes/content.node_form');
@@ -121,10 +118,10 @@ function editablefields_modal_form(&$form_state) {
 /**
  * Submit handler for fields.
  */
-function editablefields_modal_form_submit($form, &$form_state) {
+function editablefields_inline_form_submit($form, &$form_state) {
   $nids = explode(',', trim($form_state['values']['nids'], ','));
   $nids = array_unique($nids);
-  $replacements = $additions = $deletions = array();
+  $replacements = array();
   $field = $form['#field_info'][$form_state['_params']['field_name']];
 
   foreach ($nids as $nid) {
@@ -140,7 +137,7 @@ function editablefields_modal_form_submit($form, &$form_state) {
       $content_set_empty = content_set_empty($field, $new_values);
       foreach ((array)$node->{$field['field_name']} as $delta => $item) {
         $item['delta'] = $delta;
-        $replacements[$nid] .= editablefields_modal_link_text($field, $item, $field['display_settings']['modal']['format'], $node);
+        $replacements[$nid] .= editablefields_inline_link_text($field, $item, $field['display_settings']['modal']['format'], $node);
       }
     }
   }
@@ -151,32 +148,15 @@ function editablefields_modal_form_submit($form, &$form_state) {
 }
 
 /**
- * $values is the POSTed values array from the browser. With multivalued fields
- * it will also contain the "Add more items" string which we don't need.
- *
- * @param  $field
- *   The CCK field array.
- * @param  $values
- *   The values POSTed from the browser.
- * @return array
- *   Return the filtered array of non-empty values.
- */
-function _editablefields_filter_field_post_values($field, $values) {
-  return array_filter((array)content_set_empty($field, $values), 'is_array');
-}
-
-
-/**
  * Default theme implementation for editablefields_modal.
  */
-function theme_editablefields_modal($element) {
+function theme_editablefields_inline($element) {
   static $fields = array();
   static $views_field_edit_column = array();
   $node = $element['#node'];
   drupal_add_js(drupal_get_path('module', 'editablefields') . '/editablefields.js');
   ctools_include('ajax');
-  ctools_include('modal');
-  ctools_modal_add_js();
+  // ctools_modal_add_js();
   
   /**
    * Keep track of the current Views row/column so we can apply 
@@ -206,20 +186,20 @@ function theme_editablefields_modal($element) {
   }
   
   $text_formatter = ($options['text_formatter']) ? $options['text_formatter'] : $field['display_settings']['modal']['format'];
-  $css_id = editablefields_modal_wrapper_id($element);
+  $css_id = editablefields_inline_wrapper_id($element);
   foreach ($element as $delta => $item) {
     if (is_integer($delta)) {
-      $link_text .= editablefields_modal_link_text($field, $item['#item'], $text_formatter, $node);
+      $link_text .= editablefields_inline_link_text($field, $item['#item'], $text_formatter, $node);
     }
   }
   
   $link_text = '<div id="' . $css_id . '">' . $link_text . '</div>';
-  $output =  editablefields_modal_text_button($link_text, 'editablefields/nojs/modal/' . $element['#node']->nid . '/' . $element['#field_name'] , check_plain($link_text));
+  $output =  editablefields_inline_text_button($link_text, 'editablefields/nojs/inline/' . $element['#node']->nid . '/' . $element['#field_name'] , check_plain($link_text));
   ctools_include('plugins');
   return $output;
 }
 
-function editablefields_modal_link_text($field, $item, $formatter_name, $node) {
+function editablefields_inline_link_text($field, $item, $formatter_name, $node) {
   // Other module's formatters might be doing something just as exotic
   // as we are but we can only allow tags that won't mess with our button.
   // We use filter_xss just for its html stripping magic.
@@ -252,13 +232,65 @@ function editablefields_modal_link_text($field, $item, $formatter_name, $node) {
  * @param $class
  *   Any class to apply to the link. @todo this should be a options array.
  */
-function editablefields_modal_text_button($text, $dest, $alt, $class = '') {
-  return ctools_ajax_text_button($text, $dest, $alt, $class, 'editablefields-use-ctools-modal');
+function editablefields_inline_text_button($text, $dest, $alt, $class = '') {
+  return ctools_ajax_text_button($text, $dest, $alt, $class, 'editablefields-use-inline');
 }
 
-function editablefields_modal_wrapper_id($element) {
-  return 'editablefields-modal-' . $element['#type_name'] . '-' . $element['#field_name'] . '-' . $element['#node']->nid;
+function editablefields_inline_wrapper_id($element) {
+  return 'editablefields-inline-' . $element['#type_name'] . '-' . $element['#field_name'] . '-' . $element['#node']->nid;
 }
+
+function editablefields_inline_form_wrapper($form_id, &$form_state) {
+  ctools_include('form');
+  // This won't override settings already in.
+  $form_state += array(
+    're_render' => FALSE,
+    'no_redirect' => !empty($form_state['ajax']),
+  );
+
+  $output = ctools_build_form($form_id, $form_state);
+  if (!empty($form_state['ajax']) && empty($form_state['executed'])) {
+    return editablefields_inline_form_render($form_state, $output);
+  }
+
+  return $output;
+}
+
+/**
+ * Render a form into an AJAX display.
+ */
+function editablefields_inline_form_render($form_state, $output) {
+  $title = empty($form_state['title']) ? drupal_get_title() : $form_state['title'];
+
+  // If there are messages for the form, render them.
+  if ($messages = theme('status_messages')) {
+    $output = '<div class="messages">' . $messages . '</div>' . $output;
+  }
+
+  $commands = array();
+  if (isset($form_state['js settings'])) {
+    $commands[] = ctools_ajax_command_settings($form_state['js settings']);
+  }
+
+  //$commands[] = editablefields_inline_command_display($title, $output);
+  $commands[] = array(
+    'command' => 'replace',
+    'selector' => '#editablefields-inline-test-field_test_file-6',
+    'data' => $output
+  );
+  return $commands;
+}
+
+function editablefields_inline_command_display($title, $html) {
+  return array(
+    'command' => 'alert',
+    'title' => $title,
+    'data' => $html,
+  );
+}
+
+
+
 
 
 
