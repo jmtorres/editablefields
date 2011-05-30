@@ -18,8 +18,8 @@ function editablefields_perm() {
 /**
  * Implementation of hook_ctools_plugin_directory().
  *
- * @param  $module
- * @param  $plugin
+ * @param $module
+ * @param $plugin_type
  * @return string
  */
 function editablefields_ctools_plugin_directory($module, $plugin_type) {
@@ -174,25 +174,7 @@ function editablefields_theme() {
  * Implementation of hook_field_formatter_info().
  */
 function editablefields_field_formatter_info() {
-  $items = array(
-    'editable' => array(
-      'label' => t('Editable (Ajax)'),
-      'field types' => array_keys(_content_field_types()),
-    ),
-    'editable_html' => array(
-      'label' => t('Editable (HTML)'),
-      'field types' => array_keys(_content_field_types()),
-    ),
-    'clicktoedit' => array(
-      'label' => t('Click to Edit'),
-      'field types' => array_keys(_content_field_types()),
-    ),
-//    'editablefields_modal' => array(
-//      'label' => t('Editable Modal Widget'),
-//      'field types' => array('datetime', 'text'),
-//      'multiple values' => CONTENT_HANDLE_CORE
-//    ),
-  );
+  $items = array();
 
   $plugins = editablefields_get_plugins();
   foreach($plugins as $plugin_name => $plugin) {
@@ -209,6 +191,8 @@ function editablefields_field_formatter_info() {
 
 /**
  * Implementation of hook_content_build_modes().
+ *
+ * @return array
  */
 function editablefields_content_build_modes() {
   // Tell CCK about our "build" modes so that users can specify

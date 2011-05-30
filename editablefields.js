@@ -74,7 +74,7 @@ Drupal.behaviors.editablefields = function(context) {
   }
 }
 
-// Initialize settings array.
+// Initialize editablefields object.
 Drupal.editablefields = {};
 
 // Create a unique index for checkboxes
@@ -86,15 +86,16 @@ Drupal.editablefields.inline.clickAjaxLink = function() {
     return false;
   }
 
-  var url = $(this).attr('href');
-  var object = $(this);
-  $(this).addClass('ctools-ajaxing');
+  // url will look like '/editablefields/nojs/inline/[nid]/[field_name]
+  // the 'nojs' bit is taken care by CTools automatically
+  var url = $(this).attr('href'),
+    clicked_object = $(this);
+  clicked_object.addClass('ctools-ajaxing');
   try {
-    url = url.replace(/\/nojs(\/|$)/g, '/ajax$1');
     $.ajax({
       type: "POST",
       url: url,
-      data: { 'js': 1, 'ctools_ajax': 1},
+      data: {'js': 1, 'ctools_ajax': 1},
       global: true,
       success: Drupal.CTools.AJAX.respond,
       error: function(xhr) {
@@ -107,7 +108,7 @@ Drupal.editablefields.inline.clickAjaxLink = function() {
     });
   }
   catch (err) {
-    alert("An error occurred while attempting to process " + url);
+    alert("An error occurred while attempting to process " + url + ': ' + err);
     $('.ctools-ajaxing').removeClass('ctools-ajaxing');
     return false;
   }

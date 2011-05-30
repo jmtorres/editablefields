@@ -155,6 +155,7 @@ function theme_editablefields_inline($element) {
   static $views_field_edit_column = array();
   $node = $element['#node'];
   drupal_add_js(drupal_get_path('module', 'editablefields') . '/editablefields.js');
+  ctools_add_js('ajax-responder');
   ctools_include('ajax');
   // ctools_modal_add_js();
   
@@ -185,8 +186,9 @@ function theme_editablefields_inline($element) {
     $options = $views_options;
   }
   
-  $text_formatter = ($options['text_formatter']) ? $options['text_formatter'] : $field['display_settings']['modal']['format'];
+  $text_formatter = !empty($options['text_formatter']) ? $options['text_formatter']: $field['display_settings']['modal']['format'];
   $css_id = editablefields_inline_wrapper_id($element);
+  $link_text = '';
   foreach ($element as $delta => $item) {
     if (is_integer($delta)) {
       $link_text .= editablefields_inline_link_text($field, $item['#item'], $text_formatter, $node);
