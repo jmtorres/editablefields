@@ -135,6 +135,7 @@ function editablefields_inline_form_submit($form, &$form_state) {
       
       // TODO: persist the original text formatter from original view
       $content_set_empty = content_set_empty($field, $new_values);
+      $replacements[$nid] = '';
       foreach ((array)$node->{$field['field_name']} as $delta => $item) {
         $item['delta'] = $delta;
         $replacements[$nid] .= editablefields_inline_link_text($field, $item, $field['display_settings']['modal']['format'], $node);
