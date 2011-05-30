@@ -62,7 +62,11 @@ function editablefields_inline($method, $responder = 'inline', $node, $field_nam
   $form_state = array(
     'ajax' => TRUE, 
     'node' => $node,
-    '_params' => array('field_name' => $field_name, 'node_type' => $node->type)
+    '_params' => array(
+      'field_name' => $field_name,
+      'node_type' => $node->type,
+      'active_elem_index' => (int) $_REQUEST['active_elem_index'],
+    ),
   );
 
   $output = editablefields_inline_form_wrapper('editablefields_' . $responder . '_form', $form_state);
@@ -155,8 +159,11 @@ function theme_editablefields_inline($element) {
   static $fields = array();
   static $views_field_edit_column = array();
   $node = $element['#node'];
-  drupal_add_js(drupal_get_path('module', 'editablefields') . '/editablefields.js');
+
+  // ajax-responder.js needs to be before editablefields.js
   ctools_add_js('ajax-responder');
+  drupal_add_js(drupal_get_path('module', 'editablefields') . '/editablefields.js');
+
   ctools_include('ajax');
   // ctools_modal_add_js();
   
@@ -253,7 +260,11 @@ function editablefields_inline_form_wrapper($form_id, &$form_state) {
 
   $output = ctools_build_form($form_id, $form_state);
   if (!empty($form_state['ajax']) && empty($form_state['executed'])) {
-    return editablefields_inline_form_render($form_state, $output);
+    return editablefields_inline_form_render(
+      $form_state['_params']['active_elem_index'],
+      $form_state,
+      $output
+    );
   }
 
   return $output;
@@ -262,7 +273,7 @@ function editablefields_inline_form_wrapper($form_id, &$form_state) {
 /**
  * Render a form into an AJAX display.
  */
-function editablefields_inline_form_render($form_state, $output) {
+function editablefields_inline_form_render($active_elem_index, $form_state, $output) {
   $title = empty($form_state['title']) ? drupal_get_title() : $form_state['title'];
 
   // If there are messages for the form, render them.
@@ -275,12 +286,7 @@ function editablefields_inline_form_render($form_state, $output) {
     $commands[] = ctools_ajax_command_settings($form_state['js settings']);
   }
 
-  //$commands[] = editablefields_inline_command_display($title, $output);
-  $commands[] = array(
-    'command' => 'replace',
-    'selector' => '#editablefields-inline-test-field_test_file-6',
-    'data' => $output
-  );
+  $commands[] = ctools_ajax_command_replace_active_element($active_elem_index, $output);
   return $commands;
 }
 

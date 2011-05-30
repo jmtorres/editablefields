@@ -240,6 +240,28 @@ function editablefields_form_alter(&$form, &$form_state, $form_id) {
   }
 }
 
+
+/**
+ * Editablefields version of replace CTools command.
+ * It uses the
+ *
+ * The replace command will replace a portion of the current document
+ * with the specified HTML.
+ *
+ * @param $html
+ *   The data to use with the jquery replace() function.
+ *
+ * @return array
+ */
+function ctools_ajax_command_replace_active_element($index, $html) {
+  return array(
+    'command' => 'replace_active_element',
+    'active_elem_index' => $index,
+    'data' => $html,
+  );
+}
+
+
 /**
  * Theme the editable field.
  */

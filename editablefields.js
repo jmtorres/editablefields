@@ -77,6 +77,12 @@ Drupal.behaviors.editablefields = function(context) {
 // Initialize editablefields object.
 Drupal.editablefields = {};
 
+// Initialize array where all the clicked/active objects live
+// Each time an editable field link is clicked or active (think modal)
+// it is inserted in this array. The index where it was inserted is sent to the
+// server and is returned so that JS code knows what to replace
+Drupal.editablefields.active_elements = [];
+
 // Create a unique index for checkboxes
 Drupal.editablefields.checkbox_fix_index = 0;
 
@@ -89,13 +95,21 @@ Drupal.editablefields.inline.clickAjaxLink = function() {
   // url will look like '/editablefields/nojs/inline/[nid]/[field_name]
   // the 'nojs' bit is taken care by CTools automatically
   var url = $(this).attr('href'),
-    clicked_object = $(this);
-  clicked_object.addClass('ctools-ajaxing');
+    // we are adding an element (see below) so the index is the same
+    // as the array length
+    active_elem_index = Drupal.editablefields.active_elements.length;
+  // insert the clicked object in the active_elements array
+  // active_elem_index's value will be sent to the server so that
+  // we can keep track of what element to replace
+  Drupal.editablefields.active_elements.push($(this));
+
+  // mark the element as ajax active
+  $(this).addClass('ctools-ajaxing');
   try {
     $.ajax({
       type: "POST",
       url: url,
-      data: {'js': 1, 'ctools_ajax': 1},
+      data: {'js': 1, 'ctools_ajax': 1, 'active_elem_index': active_elem_index},
       global: true,
       success: Drupal.CTools.AJAX.respond,
       error: function(xhr) {
@@ -356,4 +370,19 @@ Drupal.editablefields.onblur = function(element, forceClose) {
  */
 Drupal.editablefields.datepickerOnClose = function(dateText, inst) {
   Drupal.editablefields.onblur($(this), true);
+}
+
+// CTools AJAX command that uses the active_elements array to
+// replace an element on the client side
+Drupal.CTools.AJAX.commands.replace_active_element = function(data) {
+  var data_object = $(data.data),
+    active_element = Drupal.editablefields.active_elements[data.active_elem_index];
+
+  // remove the active element from the array without
+  // updating the length property of the array
+  delete Drupal.editablefields.active_elements[data.active_elem_index];
+  // replace
+  $(active_element).replaceWith(data_object);
+  // attach behaviors
+  Drupal.attachBehaviors(data_object);
 }
