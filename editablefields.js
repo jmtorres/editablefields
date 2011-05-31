@@ -102,8 +102,6 @@ Drupal.editablefields.inline.clickAjaxLink = function() {
     return false;
   }
 
-  // url will look like '/editablefields/nojs/inline/[nid]/[field_name]
-  // the 'nojs' bit is taken care by CTools automatically
   var url = $(this).attr('href'),
     // we are adding an element (see below) so the index is the same
     // as the array length
