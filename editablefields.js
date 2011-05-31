@@ -35,9 +35,6 @@ Drupal.behaviors.editablefields = function(context) {
   $('div.editablefields', context).submit(function() {
     return false;
   });
-  $('input', context).not(':hidden').focus();
-  $('select', context).not(':hidden').focus();
-  $('textarea', context).not(':hidden').focus();
 }
 
 // Initialize settings array.
