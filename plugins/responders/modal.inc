@@ -147,8 +147,10 @@ function theme_editablefields_modal($element) {
     $options = $views_options;
   }
   
-  $text_formatter = ($options['text_formatter']) ? $options['text_formatter'] : $field['display_settings']['modal']['format'];
+  $text_formatter = !empty($options['text_formatter']) ?
+    $options['text_formatter'] : $field['display_settings']['modal']['format'];
   $css_id = editablefields_modal_wrapper_id($element);
+  $link_text = '';
   foreach ($element as $delta => $item) {
     if (is_integer($delta)) {
       $link_text .= editablefields_modal_link_text($field, $item['#item'], $text_formatter, $node);
