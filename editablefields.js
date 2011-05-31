@@ -15,12 +15,22 @@
 // @todo: Can only have one active clicktoedit datepicker field.
 // @todo: (related to above todo) clicktoedit datepicker fields load twice after changing date.
 Drupal.behaviors.editablefields = function(context) {
+  
   // load the ajax-editable fields
   $('div.editablefields.ajax-editable', context).not('.editablefields-processed').each(function() {
     $(this).addClass('editablefields-processed');
     Drupal.editablefields.load(this);
   });
-
+  
+  // console.log($('form#editablefields-inline-form:not(.editablefields-use-inline-processed'));
+    // Bind submit links in the inline form.
+    console.log('behaviors');
+    console.log(context);
+  $('#editablefields-inline-form:not(.editablefields-use-inline-processed)')
+    .addClass('editablefields-use-inline-processed')
+    .submit(Drupal.editablefields.inline.submitAjaxForm)
+    .bind('CToolsAJAXSubmit', Drupal.CTools.AJAX.ajaxSubmit);
+    
   // We are not taking 'context' into consideration on purpose here
   // in order to add event handlers only once per page.
   if (!$('body').hasClass('editablefields-processed')) {
@@ -62,7 +72,7 @@ Drupal.behaviors.editablefields = function(context) {
         });
       }
     });
-
+    
     // prevent form submits for editable textfields when the Enter key is hit
     // @see: http://drupal.org/node/1002582
     $(document).keydown(function(event) {
@@ -114,6 +124,15 @@ Drupal.editablefields.inline.clickAjaxLink = function() {
 
   return false;
 }
+
+Drupal.editablefields.inline.submitAjaxForm = function(e) {
+  var url = $(this).attr('action');
+  var form = $(this);
+
+  setTimeout(function() { Drupal.CTools.AJAX.ajaxSubmit(form, url); }, 1);
+  return false;
+}
+
 
 Drupal.editablefields.init = function() {
   $(this).unbind("click");

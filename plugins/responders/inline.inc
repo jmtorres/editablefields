@@ -58,28 +58,31 @@ function editablefields_inline($method, $responder = 'inline', $node, $field_nam
   drupal_add_js(drupal_get_path('module', 'editablefields') . '/editablefields.js');
   ctools_include('ajax');
   ctools_include('plugins');
-
+  $target_id =  editablefields_inline_wrapper_id(array(
+    '#type_name' => $node->type,
+    '#field_name' => $field_name,
+    '#node' => $node
+  ));
   $form_state = array(
     'ajax' => TRUE, 
     'node' => $node,
-    '_params' => array('field_name' => $field_name, 'node_type' => $node->type)
+    '_params' => array('field_name' => $field_name, 'node_type' => $node->type),
+    'css_id' => $target_id,
+    'target_selector' => 'a.' . $target_id
   );
-
-  $output = editablefields_inline_form_wrapper('editablefields_' . $responder . '_form', $form_state);
-
+  
+  $output = editablefields_inline_form_wrapper('editablefields_inline_form', $form_state);
   if (!$output) {
     $output = array();
     if ($replacements = $form_state['replacements']) {
       foreach ($replacements as $nid => $text) {
-        $css_id =  editablefields_modal_wrapper_id(array(
-          '#type_name' => $node->type,
-          '#field_name' => $field_name,
-          '#node' => $node
-        ));
+        $link_text = '<div id="' . $target_id . '">' . $text . '</div>';
+        $html =  editablefields_inline_text_button($link_text, 'editablefields/nojs/inline/' . $element['#node']->nid . '/' . $element['#field_name'], filter_xss($text, array()), $css_id);
         $output[] = ctools_ajax_command_replace(
-          '#' . $css_id, '<div id="'. $css_id . '">' . $text . '</div>');
+          '#editable-fields-inline-form', $html);
       }
     }
+    // dpm($output);
     // $output[] = ctools_modal_command_dismiss();
   }
   ctools_ajax_render($output);
@@ -99,8 +102,7 @@ function editablefields_inline_form(&$form_state) {
   $node = $form_state['node'];
   $nids = array($node->nid);
   $field = content_fields($params['field_name'], $params['node_type']);
-  $css_class = 'form-' . str_replace('_', '-', $params['field_name']);
-  $form['#attributes'] = array('class' => $css_class);
+  $form['#attributes'] = array('class' => $form_state['css_id'] . ' editablfields-inline');
 
   $form['#field_info'][$params['field_name']] = $field;
   $form += (array)content_field_form($form, $form_state, $field);
@@ -111,7 +113,9 @@ function editablefields_inline_form(&$form_state) {
 
   $form['submit'] =
     array('#type' => 'submit', '#value' => t('Submit'), '#weight' => 20);
-
+  
+  $form['#submit'] = 'editablefields_inline_form_submit';
+  // dpm($form);
   return $form;
 }
 
@@ -145,6 +149,7 @@ function editablefields_inline_form_submit($form, &$form_state) {
   $form_state += array(
     'replacements' => $replacements,
   );
+  // dpm('SUBMIT');
 }
 
 /**
@@ -156,6 +161,8 @@ function theme_editablefields_inline($element) {
   $node = $element['#node'];
   drupal_add_js(drupal_get_path('module', 'editablefields') . '/editablefields.js');
   ctools_include('ajax');
+  ctools_include('plugins');
+
   // ctools_modal_add_js();
   
   /**
@@ -194,8 +201,7 @@ function theme_editablefields_inline($element) {
   }
   
   $link_text = '<div id="' . $css_id . '">' . $link_text . '</div>';
-  $output =  editablefields_inline_text_button($link_text, 'editablefields/nojs/inline/' . $element['#node']->nid . '/' . $element['#field_name'] , check_plain($link_text));
-  ctools_include('plugins');
+  $output =  editablefields_inline_text_button($link_text, 'editablefields/nojs/inline/' . $element['#node']->nid . '/' . $element['#field_name'], filter_xss($link_text, array()), $css_id);
   return $output;
 }
 
@@ -275,7 +281,7 @@ function editablefields_inline_form_render($form_state, $output) {
   //$commands[] = editablefields_inline_command_display($title, $output);
   $commands[] = array(
     'command' => 'replace',
-    'selector' => '#editablefields-inline-test-field_test_file-6',
+    'selector' => $form_state['target_selector'],
     'data' => $output
   );
   return $commands;

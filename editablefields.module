@@ -112,7 +112,7 @@ function editablefields_menu() {
     'title' => 'ajax submit',
   );
 
-  $plugins = editablefields_get_plugins();
+  $plugins = editablefields_get_responders();
   foreach($plugins as $plugin_name => $plugin) {
     foreach($plugin['hook_menu'] as $plugin_item_path => $plugin_item) {
       $items[$plugin_item_path] = $plugin_item + array(
@@ -156,7 +156,7 @@ function editablefields_theme() {
 //    ),
   );
 
-  $plugins = editablefields_get_plugins();
+  $plugins = editablefields_get_responders();
   foreach($plugins as $plugin_name => $plugin) {
     foreach($plugin['formatter_info'] as $formatter_name => $formatter) {
       $items['editablefields_formatter_' . $formatter_name] = array(
@@ -167,8 +167,15 @@ function editablefields_theme() {
       );
     }
   }
+
   return $items;
 }
+
+/*
+function editablefields_theme_registry_alter(&$items) {
+  $items['views_view_field']['function'] = 'editablefields_views_view_field';
+}
+*/
 
 /**
  * Implementation of hook_field_formatter_info().
@@ -194,16 +201,23 @@ function editablefields_field_formatter_info() {
 //    ),
   );
 
-  $plugins = editablefields_get_plugins();
-  foreach($plugins as $plugin_name => $plugin) {
-    foreach($plugin['formatter_info'] as $formatter_name => $formatter) {
-      $items[$formatter_name] = $formatter + array(
-        'field types' => array(),
-        'multiple values' => CONTENT_HANDLE_CORE,
-      );
+  $responders = editablefields_get_responders();
+  $editables = editablefields_get_editables();
+  foreach($responders as $responder_name => $responder) {
+    if (!empty($responder['formatter_info'])) {
+      foreach($responder['formatter_info'] as $formatter_name => $formatter) {
+        $items[$formatter_name] = $formatter;
+        $items[$formatter_name] = $formatter + array(
+          'field types' => array(),
+          'multiple values' => CONTENT_HANDLE_MODULE,
+        );
+        foreach($editables as $editable) {
+          $items[$formatter_name]['field types'] = array_merge($items[$formatter_name]['field types'], $editable['formatter_info']['field types']);
+        }
+      }
     }
   }
-
+  
   return $items;
 }
 
@@ -215,7 +229,7 @@ function editablefields_content_build_modes() {
   // how they want the text in their modal/other link to be formatted
   // on the Display Fields tab of the CCK admin.
   $build_modes = array();
-  $plugins = editablefields_get_plugins();
+  $plugins = editablefields_get_responders();
   if (!empty($plugins)) {
     $build_modes = array(
       'editablefields' => array(
@@ -254,7 +268,10 @@ function editablefields_form_alter(&$form, &$form_state, $form_id) {
       }
     }
   }
+  
 }
+
+
 
 /**
  * Theme the editable field.
@@ -708,9 +725,9 @@ function editablefields_formatter_get_settings($field_name, $type_name, $context
  *
  * @return array
  */
-function editablefields_get_plugins() {
+function editablefields_get_responders() {
   ctools_include('plugins');
-  $plugins = ctools_get_plugins('editablefields', 'editables');
+  $plugins = ctools_get_plugins('editablefields', 'responders');
   foreach($plugins as &$plugin) {
     // add defaults
     $plugin += array(
@@ -719,4 +736,57 @@ function editablefields_get_plugins() {
     );
   }
   return $plugins;
+}
+
+function editablefields_get_editables() {
+  ctools_include('plugins');
+  $plugins = ctools_get_plugins('editablefields', 'editables');
+  return $plugins;
+}
+/**
+ * Menu wildcard argument callback.
+ */
+function editablefields_object_load($object_id, $editable) {
+  $editables = editablefields_get_editables();
+  $function = $editables[$editable]['entity callback'];
+  return $function($object_id);
+}
+
+/**
+ * Implementation of hook_views_api().
+ */
+function editablefields_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'editablefields') . '/includes/views',
+  );
+}
+
+function editablefields_views_option_form(&$form, &$form_state, $editable) {
+  $form['editablefields_allowed'] = array(
+    '#title' => t('Make field editable'),
+    '#description' => t('This will override any other link you have set.'),
+    '#type' => 'checkbox',
+    '#default_value' => '',
+  );
+  $responders = editablefields_get_responders();
+  $options = array();
+
+  foreach($responders as $responder) {
+    $options[$responder['name']] = $responder['title'];
+  }
+  
+  $form['editablefields_responder'] = array(
+    '#title' => t('Editable Behavior'),
+    '#description' => t('How would you like to edit this field?'),
+    '#type' => 'select',
+    '#options' => $options,
+    '#dependency' => array('edit-options-editablefields-allowed' =>  array('1')),
+    '#process' => array('views_process_dependency')
+  );
+  
+  $form['editablefields_editable'] = array(
+    '#type' => 'hidden',
+    '#value' => $editable,
+  );
 }
