@@ -15,7 +15,7 @@
 $plugin = array(
   'title' => t('Editable Modal Widget'),
   'hook_menu' => array(
-    'editablefields/%/modal/%/%editablefields_object/%' => array(
+    'editablefields/%ctools_js/modal/%/%editablefields_object/%' => array(
       'page callback' => 'editablefields_modal',
       'access arguments' => array('access content'),
       'page arguments' => array(1, 2, 3, 4, 5),

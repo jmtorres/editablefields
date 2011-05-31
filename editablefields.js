@@ -116,6 +116,7 @@ Drupal.editablefields.inline.clickAjaxLink = function() {
   // mark the element as ajax active
   $(this).addClass('ctools-ajaxing');
   try {
+    url = url.replace(/\/nojs(\/|$)/g, '/ajax$1');
     $.ajax({
       type: "POST",
       url: url,

@@ -15,7 +15,7 @@
 $plugin = array(
   'title' => t('Editable Inline Widget'),
   'hook_menu' => array(
-    'editablefields/%/inline/%node/%' => array(
+    'editablefields/%ctools_js/inline/%node/%' => array(
       'page callback' => 'editablefields_inline',
       'access arguments' => array('access content'),
       'page arguments' => array(1, 2, 3, 4),
