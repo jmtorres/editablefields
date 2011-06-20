@@ -20,12 +20,12 @@ Drupal.behaviors.editablefields_overrides = function(context) {
       }
     });
   }
-}
+};
 
 /**
  * This file is included after misc/textarea.js so this simply overrides the default behavior.
  */
-Drupal.behaviors.textarea = function(context) {}
+Drupal.behaviors.textarea = function(context) {};
 
 // initialize
 Drupal.editablefields_overrides = {};

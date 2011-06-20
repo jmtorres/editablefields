@@ -82,7 +82,7 @@ Drupal.behaviors.editablefields = function(context) {
       }
     });
   }
-}
+};
 
 // Initialize editablefields object.
 Drupal.editablefields = {};
@@ -137,7 +137,7 @@ Drupal.editablefields.inline.clickAjaxLink = function() {
   }
 
   return false;
-}
+};
 
 Drupal.editablefields.inline.submitAjaxForm = function(e) {
   var url = $(this).attr('action');
@@ -145,7 +145,7 @@ Drupal.editablefields.inline.submitAjaxForm = function(e) {
 
   setTimeout(function() { Drupal.CTools.AJAX.ajaxSubmit(form, url); }, 1);
   return false;
-}
+};
 
 
 Drupal.editablefields.init = function() {
@@ -154,7 +154,7 @@ Drupal.editablefields.init = function() {
   $(this).addClass('editablefields-processed');
   $(this).children().hide();
   Drupal.editablefields.load(this);
-}
+};
 
 Drupal.editablefields.view = function(element) {
   if ($(element).hasClass("editablefields_REMOVE") ) {
@@ -388,7 +388,7 @@ Drupal.editablefields.onblur = function(element, forceClose) {
  */
 Drupal.editablefields.datepickerOnClose = function(dateText, inst) {
   Drupal.editablefields.onblur($(this), true);
-}
+};
 
 // CTools AJAX command that uses the active_elements array to
 // replace an element on the client side
@@ -403,4 +403,4 @@ Drupal.CTools.AJAX.commands.replace_active_element = function(data) {
   $(active_element).replaceWith(data_object);
   // attach behaviors
   Drupal.attachBehaviors(data_object);
-}
+};
