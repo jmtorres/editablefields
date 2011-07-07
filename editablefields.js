@@ -24,8 +24,6 @@ Drupal.behaviors.editablefields = function(context) {
   
   // console.log($('form#editablefields-inline-form:not(.editablefields-use-inline-processed'));
     // Bind submit links in the inline form.
-    console.log('behaviors');
-    console.log(context);
   $('#editablefields-inline-form:not(.editablefields-use-inline-processed)')
     .addClass('editablefields-use-inline-processed')
     .submit(Drupal.editablefields.inline.submitAjaxForm)
@@ -83,6 +81,7 @@ Drupal.behaviors.editablefields = function(context) {
     });
   }
 };
+
 
 // Initialize editablefields object.
 Drupal.editablefields = {};
@@ -142,7 +141,7 @@ Drupal.editablefields.inline.clickAjaxLink = function() {
 Drupal.editablefields.inline.submitAjaxForm = function(e) {
   var url = $(this).attr('action');
   var form = $(this);
-
+ 
   setTimeout(function() { Drupal.CTools.AJAX.ajaxSubmit(form, url); }, 1);
   return false;
 };
