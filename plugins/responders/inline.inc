@@ -122,7 +122,7 @@ function editablefields_inline_form(&$form_state) {
     array('#type' => 'submit', '#value' => t('Submit'), '#weight' => 20);
   
   $form['#submit'] = 'editablefields_inline_form_submit';
-  // dpm($form);
+
   return $form;
 }
 
@@ -157,7 +157,8 @@ function editablefields_inline_form_submit($form, &$form_state) {
   $form_state += array(
     'replacements' => $replacements,
   );
-  // dpm('SUBMIT');
+
+  
 }
 
 /**

@@ -131,40 +131,13 @@ function editablefields_menu() {
  * Implementation of hook_theme().
  */
 function editablefields_theme() {
-  $items = array(
-    'editablefields_formatter_editable' => array(
-      'arguments' => array('element' => NULL),
-      'function' => 'theme_editablefields_formatter_editable',
-    ),
-    'editablefields_formatter_editable_html' => array(
-      'arguments' => array('element' => NULL),
-      'function' => 'theme_editablefields_formatter_editable',
-    ),
-    'editablefields_formatter_clicktoedit' => array(
-      'arguments' => array('element' => NULL),
-      'function' => 'theme_editablefields_formatter_editable',
-    ),
-    'editablefields_clicktoedit_message' => array(
-      'arguments' => array(),
-    ),
-    'editablefields_clicktoedit_message_empty' => array(
-      'arguments' => array(),
-    ),
-//    'editablefields_formatter_editablefields_modal' => array(
-//      'arguments' => array('element' => NULL),
-//      'function' => 'theme_editablefields_modal',
-//    ),
-  );
-
-  $plugins = editablefields_get_responders();
+  
+  $items = array();
+  
+  $plugins = editablefields_get_editables();
   foreach($plugins as $plugin_name => $plugin) {
-    foreach($plugin['formatter_info'] as $formatter_name => $formatter) {
-      $items['editablefields_formatter_' . $formatter_name] = array(
-        'arguments' => array('element' => NULL),
-        'function' => 'theme_' . $formatter_name,
-        'file' => $plugin['file'],
-        'path' => $plugin['path'],
-      );
+    if (!empty($plugin['theme'])) {
+      $items = array_merge($items, $plugin['theme']);
     }
   }
 
@@ -182,21 +155,11 @@ function editablefields_theme_registry_alter(&$items) {
  */
 function editablefields_field_formatter_info() {
   $items = array();
-
-  $responders = editablefields_get_responders();
-  $editables = editablefields_get_editables();
-  foreach($responders as $responder_name => $responder) {
-    if (!empty($responder['formatter_info'])) {
-      foreach($responder['formatter_info'] as $formatter_name => $formatter) {
-        $items[$formatter_name] = $formatter;
-        $items[$formatter_name] = $formatter + array(
-          'field types' => array(),
-          'multiple values' => CONTENT_HANDLE_MODULE,
-        );
-        foreach($editables as $editable) {
-          $items[$formatter_name]['field types'] = array_merge($items[$formatter_name]['field types'], $editable['formatter_info']['field types']);
-        }
-      }
+  
+  $plugins = editablefields_get_editables();
+  foreach($plugins as $plugin_name => $plugin) {
+    if (!empty($plugin['formatter_info'])) {
+      $items = array_merge($items, $plugin['formatter_info']);
     }
   }
   

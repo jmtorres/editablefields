@@ -2,9 +2,6 @@
 
 $plugin = array(
   'title' => t('Node editable field'),
-  'formatter_info' => array(
-    'field types' => array()
-  ), 
   'entity callback' => 'node_load'
 );
 

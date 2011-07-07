@@ -73,14 +73,18 @@ function editablefields_modal($method, $responder = 'modal', $editable, $object,
   if (!$output) {
     $output = array();
     if ($replacements = $form_state['replacements']) {
-      foreach ($replacements as $nid => $text) {
+      foreach ($replacements as $nid => $replacement) {
         $css_id =  editablefields_modal_wrapper_id(array(
           '#type_name' => $object->type,
           '#field_name' => $field_name,
-          '#node' => $node
+          '#node' => $object
         ));
+        
+        $function = 'editablefields_' . $editable . '_render';
+        $html = $function($replacement['field'], $replacement['item'], $replacement['object'], 'modal');
+        
         $output[] = ctools_ajax_command_replace(
-          '#' . $css_id, '<div id="'. $css_id . '">' . $text . '</div>');
+          '#' . $css_id, '<div id="'. $css_id . '">' . $html . '</div>');
       }
     }
     $output[] = ctools_modal_command_dismiss();
@@ -103,85 +107,6 @@ function _editablefields_filter_field_post_values($field, $values) {
   return array_filter((array)content_set_empty($field, $values), 'is_array');
 }
 
-
-/**
- * Default theme implementation for editablefields_modal.
- * RESPONDER
- */
-function theme_editablefields_modal($element) {
-
-  static $fields = array();
-  static $views_field_edit_column = array();
-  $node = $element['#node'];
-  // ajax-responder.js needs to be before editablefields.js
-  ctools_add_js('ajax-responder');
-  drupal_add_js(drupal_get_path('module', 'editablefields') . '/editablefields.js');
-  ctools_include('plugins');
-  ctools_include('ajax');
-  ctools_include('modal');
-  ctools_modal_add_js();
-  /**
-   * Keep track of the current Views row/column so we can apply 
-   * Views specified formatter settings.
-   */
-  if (!empty($node->field_edit)) {
-    $view = views_get_current_view();
-    if (empty($views_field_edit_column[$view->name][$view->row_index])) {
-      $views_field_edit_column[$view->name][$view->row_index] = 0;
-    }
-    $views_options = $node->field_edit[$views_field_edit_column[$view->name][$view->row_index]];
-    $views_field_edit_column[$view->name][$view->row_index]++;
-  }
-    
-  $type = $element['#type_name'];
-  $field_name = $element['#field_name'];
-  $context = !empty($node->content) && !empty($node->content[$field_name]) ? $node->content[$field_name]['#context'] : 'full';
-  
-  if (empty($fields[$type][$field_name])) {
-    $fields[$type][$field_name] = content_fields($field_name, $type);
-  }
-  
-  $field = $fields[$type][$field_name];
-  $options = editablefields_formatter_get_settings($field_name, $type, $context);
-  if (!empty($views_options)) {
-    $options = $views_options;
-  }
-  
-  $text_formatter = !empty($options['text_formatter']) ?
-    $options['text_formatter'] : $field['display_settings']['modal']['format'];
-  $css_id = editablefields_modal_wrapper_id($element);
-  $link_text = '';
-  foreach ($element as $delta => $item) {
-    if (is_integer($delta)) {
-      $link_text .= editablefields_modal_link_text($field, $item['#item'], $text_formatter, $node);
-    }
-  }
-
-  $link_text = '<div id="' . $css_id . '">' . $link_text . '</div>';
-  $output =  editablefields_modal_text_button($link_text, 'editablefields/nojs/modal/cck/' . $element['#node']->nid . '/' . $element['#field_name'] , check_plain($link_text));
-
-  return $output;
-}
-
-/**
- * RESPONDER
- */
-function editablefields_modal_link_text($field, $item, $formatter_name, $node) {
-  // Other module's formatters might be doing something just as exotic
-  // as we are but we can only allow tags that won't mess with our button.
-  // We use filter_xss just for its html stripping magic.
-  $allowed_tags = array('img', 'div', 'span', 'em', 'strong', 'cite', 'ul', 'ol', 'li', 'dl', 'dt', 'dd'); 
-  $output = filter_xss(content_format($field, $item, $formatter_name, $node), $allowed_tags);
-
-  if ($output) {
-    return $output;
-  }
-  else {
-    // TODO: "Not set" is not necessarily true.  For instance, CCK returns
-    // an empty string for files that are not "listed".     
-    return t('Not set');
-  }
-}
 
 /**
  * RESPONDER
@@ -210,7 +135,6 @@ function editablefields_modal_text_button($text, $dest, $alt, $class = '') {
 function editablefields_modal_wrapper_id($element) {
   return 'editablefields-modal-' . $element['#type_name'] . '-' . $element['#field_name'] . '-' . $element['#node']->nid;
 }
-
 
 
 
