@@ -347,13 +347,17 @@ function editablefields_submit() {
       if ((content_handle('widget', 'multiple values', $field) == CONTENT_HANDLE_CORE) && ($field['type'] != matrix)) {
         if ($node->{$field_name}[$delta] != $form_state['values'][$field_name][0]) {
           $node->{$field_name}[$delta] = $form_state['values'][$field_name][0];
-          node_save($node);
+          // Custom node_save() function to solve a nodecomment module issue.
+          // See _editablefields_node_save() definition below for more details.
+          _editablefields_node_save($node);
         }
       }
       else {
         if ($node->{$field_name} != $form_state['values'][$field_name]) {
           $node->{$field_name} = $form_state['values'][$field_name];
-          node_save($node);
+          // Custom node_save() function to solve a nodecomment module issue.
+          // See _editablefields_node_save() definition below for more details.
+          _editablefields_node_save($node);
         }
       }
       // make sure sensible headers etc are sent...
@@ -369,4 +373,21 @@ function editablefields_submit() {
     print t('No write permissions for %field', array('%field' => $field_name));
   }
   exit();
+}
+
+function _editablefields_node_save($node) {
+  // On load, nodecomment stores $node->comment in $node->node_comment
+  // and sets $node->comment to COMMENT_NODE_DISABLED.
+  // On node_save($node) the last value is written to the database
+  // so we have to do the reverse before and restore after save.
+  // But only when the nodecomment module is installed and enabled.
+  if (module_exists('nodecomment')) { // 
+    $node_comment = $node->comment;
+    $node_node_comment = $node->node_comment;
+  }
+  node_save($node);
+  if (module_exists('nodecomment')) {
+    $node->node_comment = $node_node_comment;
+    $node->comment = $node_comment;
+  }
 }
