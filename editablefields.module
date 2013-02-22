@@ -34,6 +34,9 @@ function editablefields_library() {
     'js' => array(
       drupal_get_path('module', 'editablefields') . '/editablefields.js' => array('group' => JS_DEFAULT + 1),
     ),
+    'css' => array(
+      drupal_get_path('module', 'editablefields') . '/editablefields.css' => array('type' => 'file', 'media' => 'screen'),
+    ),
     'dependencies' => array(
       array('system', 'drupal.form'),
       // editablefields.js contains a small override to the autocomplete code.
