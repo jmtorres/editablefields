@@ -264,6 +264,7 @@ function editablefields_field_formatter_view($entity_type, $entity, $field, $ins
   else {
     // Standard Field API integration: generate the form.
     // Inject the HTML form.
+    $display['label'] = 'hidden';
     $items = array(0 => array());
     return array(
       0 => drupal_get_form('editablefields_form__' . $entity_type . '__' . $id . '__' . $vid . '__' . $field['field_name'], $entity_type, $entity, $field, $instance, $langcode, $display),
