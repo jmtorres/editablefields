@@ -51,6 +51,18 @@ function editablefields_library() {
 }
 
 /**
+ * Implements hook_permission()
+ */
+function editablefields_permission() {
+  return array(
+    'use editablefields' => array(
+      'title' => t('Use editablefields'),
+      'description' => t('Use editable fields'),
+    ),
+  );
+}
+
+/**
  * Implements hook_field_formatter_settings_form().
  */
 function editablefields_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
@@ -219,7 +231,7 @@ function editablefields_field_formatter_view($entity_type, $entity, $field, $ins
 
   // See if access to this form element is restricted,
   // if so, skip widget processing and just set the value.
-  if (!entity_access('update', $entity_type, $entity) || !field_access('edit', $field, $entity_type, $entity)) {
+  if (!entity_access('update', $entity_type, $entity) || !field_access('edit', $field, $entity_type, $entity) || !user_access('use editablefields')) {
     // Can't edit.
     return editablefields_fallback_formatter($entity_type, $entity, $field, $instance, $langcode, $items, $display);
   }
