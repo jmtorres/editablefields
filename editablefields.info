@@ -1,8 +1,6 @@
 name = Editable Fields
 description = "Allows you to make some fields editable from the display."
 package = Fields
-version = "7.x-3.x-dev"
-
 core = 7.x
 
 dependencies[] = entity
