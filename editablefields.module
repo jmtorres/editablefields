@@ -541,6 +541,10 @@ function editablefields_form_submit(&$form, &$form_state) {
   $entity = entity_load($element['#entity_type'], array($element['#entity_id']));
   $entity = reset($entity);
 
+  // Populate default node settings, e.g. revision.
+  if ($element['#entity_type'] == 'node') {
+    node_object_prepare($entity);
+  }
   entity_form_submit_build_entity($element['#entity_type'], $entity, $element, $form_state);
 
   // Validate element, which was changed, using standard drupal field validation.
